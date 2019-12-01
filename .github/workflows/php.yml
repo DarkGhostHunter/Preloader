@@ -40,4 +40,4 @@ jobs:
           COVERALLS_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
           composer require --dev php-coveralls/php-coveralls
-          php vendor/bin/php-coveralls
+          vendor/bin/php-coveralls --verbose --coverage_clover build/logs/clover.xml
