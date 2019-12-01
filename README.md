@@ -3,7 +3,8 @@ Braden Collum - Unsplash (UL) #9HI8UJMSdZA](https://images.unsplash.com/photo-14
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/darkghosthunter/preloader.svg?style=flat-square)](https://packagist.org/packages/darkghosthunter/preloader) [![License](https://poser.pugx.org/darkghosthunter/preloader/license)](https://packagist.org/packages/darkghosthunter/preloader)
 ![](https://img.shields.io/packagist/php-v/darkghosthunter/preloader.svg)
- [![Build Status](https://travis-ci.com/DarkGhostHunter/Preloader.svg?branch=master)](https://travis-ci.com/DarkGhostHunter/Preloader) [![Coverage Status](https://coveralls.io/repos/github/DarkGhostHunter/Preloader/badge.svg?branch=master)](https://coveralls.io/github/DarkGhostHunter/Preloader?branch=master) [![Maintainability](https://api.codeclimate.com/v1/badges/9571f57106069b5f3aac/maintainability)](https://codeclimate.com/github/DarkGhostHunter/Preloader/maintainability) [![Test Coverage](https://api.codeclimate.com/v1/badges/9571f57106069b5f3aac/test_coverage)](https://codeclimate.com/github/DarkGhostHunter/Preloader/test_coverage)
+ ![](https://github.com/actions/hello-world/workflows/Greet%20Everyone/badge.svg)
+[![Coverage Status](https://coveralls.io/repos/github/DarkGhostHunter/Preloader/badge.svg?branch=master)](https://coveralls.io/github/DarkGhostHunter/Preloader?branch=master) [![Maintainability](https://api.codeclimate.com/v1/badges/9571f57106069b5f3aac/maintainability)](https://codeclimate.com/github/DarkGhostHunter/Preloader/maintainability) [![Test Coverage](https://api.codeclimate.com/v1/badges/9571f57106069b5f3aac/test_coverage)](https://codeclimate.com/github/DarkGhostHunter/Preloader/test_coverage)
 
 # Opcache Preloader
 
