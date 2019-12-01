@@ -3,7 +3,7 @@ Braden Collum - Unsplash (UL) #9HI8UJMSdZA](https://images.unsplash.com/photo-14
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/darkghosthunter/preloader.svg?style=flat-square)](https://packagist.org/packages/darkghosthunter/preloader) [![License](https://poser.pugx.org/darkghosthunter/preloader/license)](https://packagist.org/packages/darkghosthunter/preloader)
 ![](https://img.shields.io/packagist/php-v/darkghosthunter/preloader.svg)
- ![](https://github.com/actions/hello-world/workflows/Greet%20Everyone/badge.svg)
+ ![](https://github.com/actions/darkghosthunter/preloader/PHP%20Composer/badge.svg)
 [![Coverage Status](https://coveralls.io/repos/github/DarkGhostHunter/Preloader/badge.svg?branch=master)](https://coveralls.io/github/DarkGhostHunter/Preloader?branch=master)
 
 # Opcache Preloader
@@ -63,12 +63,6 @@ Don't worry, you can configure what and how compile the list.
 
 Yuo can configure the Preloader to run when a condition is met, limit the file list, and where to output the compiled preload list.
 
-### `whenHits()` (optional)
-
-This is the best way to gather good statistics for a good preloading list if you don't know the real load of your application.
-
-    Preloader::whenHits(200000): // After a given number of hits.
-
 After the Opcache hits reach a certain number, the Preloader will generate the script, not before.
 
 ### `when()` (optional)
@@ -80,6 +74,23 @@ If you don't feel like using Opcache hits, you can just use `when()`. The Preloa
 You can also use a Closure (Arrow function or any other callable) that returns `true`.
 
     Preloader::when(fn () => $app->cache()->get('should_run'));
+
+
+#### `whenHits()` (optional)
+
+This is the best way to gather good statistics for a good preloading list if you don't know the real load of your application.
+
+    Preloader::whenHits(200000): // After a given number of hits.
+
+#### `whenOneIn()` (optional)
+
+This is another helper for conditioning the generation. The list will be generated one in a given number of chances (the higher is it, the more rare till be). 
+
+    Prealoder::whenOneIn(2000); // 1 in 2,000 chances.
+
+This may come in handy using it with `overwrite()` to constantly recreate the list.
+
+    Prealoder::overwrite()->whenOneIn(2000);
 
 ### `memory()` (optional, default)
 
