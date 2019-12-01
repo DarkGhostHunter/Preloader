@@ -36,7 +36,7 @@
     },
     "scripts": {
         "test": "vendor/bin/phpunit",
-        "test-coverage": "vendor/bin/phpunit --coverage-html coverage"
+        "test-coverage": "vendor/bin/phpunit --coverage-html --coverage-clover coverage"
     },
     "config": {
         "sort-packages": true
