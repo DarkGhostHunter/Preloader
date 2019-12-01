@@ -472,6 +472,66 @@ class PreloaderTest extends TestCase
         $this->assertStringContainsString('Files excluded: 1', $contents);
     }
 
+    public function testExcludesPackageFiles()
+    {
+        $opcache = $this->createMock(Opcache::class);
+
+        $opcache->method('isEnabled')
+            ->willReturn(true);
+        $opcache->method('getNumberCachedScripts')
+            ->willReturn(count($this->list));
+        $opcache->method('getHits')
+            ->willReturn(1001);
+        $opcache->method('getStatus')
+            ->willReturn([
+                'memory_usage' => [
+                    'used_memory' => rand(1000, 999999),
+                    'free_memory' => rand(1000, 999999),
+                    'wasted_memory' => rand(1000, 999999),
+                ],
+                'opcache_statistics' => [
+                    'num_cached_scripts' => rand(1000, 999999),
+                    'opcache_hit_rate' => rand(1, 99)/100,
+                    'misses' => rand(1000, 999999),
+                ],
+            ]);
+
+        $package = array_flip([
+            realpath(__DIR__ . '/../src/Conditions.php'),
+            realpath(__DIR__ . '/../src/GeneratesScript.php'),
+            realpath(__DIR__ . '/../src/LimitsList.php'),
+            realpath(__DIR__ . '/../src/ManagesFiles.php'),
+            realpath(__DIR__ . '/../src/Opcache.php'),
+            realpath(__DIR__ . '/../src/Preloader.php'),
+            realpath(__DIR__ . '/../src/PreloaderCompiler.php'),
+            realpath(__DIR__ . '/../src/PreloaderLister.php'),
+        ]);
+
+        $opcache->method('getScripts')
+            ->willReturn(array_merge($this->list, $package));
+
+        $preloader = new Preloader(new PreloaderCompiler, new PreloaderLister($opcache), $opcache);
+
+        $preloader
+            ->autoload($autoload = $this->workdir . '/autoload.php')
+            ->memory(10)
+            ->exclude([
+                'quz',
+            ])
+            ->output($this->workdir . '/preload.php')
+            ->generate();
+
+        $contents = file_get_contents($this->workdir . '/preload.php');
+
+        $files = '$files = [' . \PHP_EOL .
+            "    'bar'," . \PHP_EOL .
+            "    'foo'," . \PHP_EOL .
+            "    'qux'" . \PHP_EOL .
+            '];';
+
+        $this->assertStringContainsString($files, $contents);
+    }
+
     public function testExcludesAndAppends()
     {
         $opcache = $this->createMock(Opcache::class);

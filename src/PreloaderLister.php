@@ -49,11 +49,11 @@ class PreloaderLister
      */
     public function build() : array
     {
-        // Sort the scripts by hit ratio
-        $scripts = $this->sortScripts($this->opcache->getScripts());
-
         // Exclude the files set by the developer
-        $scripts = $this->exclude($scripts);
+        $scripts = $this->exclude($this->opcache->getScripts());
+
+        // Sort the scripts by hit ratio
+        $scripts = $this->sortScripts($scripts);
 
         // Cull the list by memory usage
         $scripts = $this->cutByMemoryLimit($scripts);
@@ -137,14 +137,14 @@ class PreloaderLister
     protected function excludedPackageFiles()
     {
         return [
-            __DIR__ . '/Conditions.php',
-            __DIR__ . '/GeneratesScript.php',
-            __DIR__ . '/LimitsList.php',
-            __DIR__ . '/ManagesFiles.php',
-            __DIR__ . '/Opcache.php',
-            __DIR__ . '/Preloader.php',
-            __DIR__ . '/PreloaderLister.php',
-            __DIR__ . '/PreloaderCompiler.php',
+            realpath(__DIR__ . '/Conditions.php'),
+            realpath(__DIR__ . '/GeneratesScript.php'),
+            realpath(__DIR__ . '/LimitsList.php'),
+            realpath(__DIR__ . '/ManagesFiles.php'),
+            realpath(__DIR__ . '/Opcache.php'),
+            realpath(__DIR__ . '/Preloader.php'),
+            realpath(__DIR__ . '/PreloaderLister.php'),
+            realpath(__DIR__ . '/PreloaderCompiler.php'),
         ];
     }
 }
