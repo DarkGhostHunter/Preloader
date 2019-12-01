@@ -4,7 +4,7 @@ Braden Collum - Unsplash (UL) #9HI8UJMSdZA](https://images.unsplash.com/photo-14
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/darkghosthunter/preloader.svg?style=flat-square)](https://packagist.org/packages/darkghosthunter/preloader) [![License](https://poser.pugx.org/darkghosthunter/preloader/license)](https://packagist.org/packages/darkghosthunter/preloader)
 ![](https://img.shields.io/packagist/php-v/darkghosthunter/preloader.svg)
  ![](https://github.com/actions/hello-world/workflows/Greet%20Everyone/badge.svg)
-[![Coverage Status](https://coveralls.io/repos/github/DarkGhostHunter/Preloader/badge.svg?branch=master)](https://coveralls.io/github/DarkGhostHunter/Preloader?branch=master) [![Maintainability](https://api.codeclimate.com/v1/badges/f820884852d33cc42e93/maintainability)](https://codeclimate.com/github/DarkGhostHunter/Preloader/maintainability) [![Test Coverage](https://api.codeclimate.com/v1/badges/f820884852d33cc42e93/test_coverage)](https://codeclimate.com/github/DarkGhostHunter/Preloader/test_coverage)
+[![Coverage Status](https://coveralls.io/repos/github/DarkGhostHunter/Preloader/badge.svg?branch=master)](https://coveralls.io/github/DarkGhostHunter/Preloader?branch=master)
 
 # Opcache Preloader
 

@@ -42,7 +42,3 @@ jobs:
       run: |
           composer require cedx/coveralls
           vendor/bin/coveralls build/logs/clover.xml
-
-    - uses: paambaati/codeclimate-action@v2.3.0
-      env:
-        CC_TEST_REPORTER_ID: 3a12c20ba3bbbd605ab7a402a9f1b1f8a9f7f6b7c0fc849020ac2d9ed6888a6d
