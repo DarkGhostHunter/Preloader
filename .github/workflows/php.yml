@@ -33,7 +33,7 @@ jobs:
         restore-keys: ${{ runner.os }}-composer-
 
     - name: Run test suite
-      run: composer run-script test-coverage
+      run: composer run-script test
 
     - name: Upload coverage results to Coveralls
       env:
