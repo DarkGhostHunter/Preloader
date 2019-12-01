@@ -6,7 +6,7 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Checkout
       uses: actions/checkout@v1
@@ -25,7 +25,7 @@ jobs:
       id: composer-cache
       run: echo "::set-output name=dir::$(composer config cache-files-dir)"
 
-    - name: Cache dependencies  
+    - name: Cache dependencies
       uses: actions/cache@v1
       with:
         path: ${{ steps.composer-cache.outputs.dir }}
@@ -33,9 +33,11 @@ jobs:
         restore-keys: ${{ runner.os }}-composer-
 
     - name: Run test suite
-      run: composer run-script test
+      run: composer run-script test-coverage
 
-    - name: Coveralls GitHub Action
-      uses: coverallsapp/github-action@master
-      with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
+    - name: Upload coverage results to Coveralls
+      env:
+          COVERALLS_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+          composer global require cedx/coveralls
+          coveralls build/logs/clover.xml
