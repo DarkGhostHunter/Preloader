@@ -304,6 +304,45 @@ class PreloaderTest extends TestCase
         );
     }
 
+    public function testWhenOneIn()
+    {
+        $opcache = $this->createMock(Opcache::class);
+
+        $opcache->method('isEnabled')
+            ->willReturn(true);
+        $opcache->method('getNumberCachedScripts')
+            ->willReturn(1000);
+        $opcache->method('getHits')
+            ->willReturn(1001);
+        $opcache->method('getStatus')
+            ->willReturn([
+                'memory_usage' => [
+                    'used_memory' => rand(1000, 999999),
+                    'free_memory' => rand(1000, 999999),
+                    'wasted_memory' => rand(1000, 999999),
+                ],
+                'opcache_statistics' => [
+                    'num_cached_scripts' => rand(1000, 999999),
+                    'opcache_hit_rate' => rand(1, 99)/100,
+                    'misses' => rand(1000, 999999),
+                ],
+            ]);
+        $opcache->method('getScripts')
+            ->willReturn($this->list);
+
+        $preloader = new Preloader(new PreloaderCompiler, new PreloaderLister($opcache), $opcache);
+
+        do {
+            $result = $preloader
+                ->autoload($this->workdir . '/autoload.php')
+                ->output($this->workdir. '/preload.php')
+                ->whenOneIn(10)
+                ->generate();
+        } while (! $result && !(bool) $this->assertFalse($result));
+
+        $this->assertTrue($result);
+    }
+
     public function testWhen()
     {
         $opcache = $this->createMock(Opcache::class);

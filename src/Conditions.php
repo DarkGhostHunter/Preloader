@@ -25,6 +25,17 @@ trait Conditions
     }
 
     /**
+     * Run the Preloader script one in a given chance
+     *
+     * @param  int $chances
+     * @return $this
+     */
+    public function whenOneIn(int $chances = 100) : self
+    {
+        return $this->when(fn () => random_int(1, $chances) === (int)floor($chances/2));
+    }
+
+    /**
      * Run the Preloader script when the condition evaluates to true
      *
      * @param callable|bool $condition
