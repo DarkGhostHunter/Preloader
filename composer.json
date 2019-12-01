@@ -1,0 +1,44 @@
+{
+    "name": "darkghosthunter/preloader",
+    "type": "library",
+    "description": "Preloader helper to create a PHP-ready preload script from Opcache.",
+    "keywords": [
+        "darkghosthunter",
+        "preloader",
+        "php-7.4",
+        "opcache"
+    ],
+    "license": "MIT",
+    "homepage": "https://github.com/darkghosthunter/preloader",
+    "authors": [
+        {
+            "name": "Italo Israel Baeza Cabrera",
+            "email": "darkghosthunter@gmail.com",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": "^7.4",
+        "ext-json": "*"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^8.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "DarkGhostHunter\\Preloader\\" : "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\" : "tests/"
+        }
+    },
+    "scripts": {
+        "test": "vendor/bin/phpunit",
+        "test-coverage": "vendor/bin/phpunit --coverage-html coverage"
+    },
+    "config": {
+        "sort-packages": true
+    },
+}

@@ -1,0 +1,36 @@
+<?php
+/**
+ * This file is generated automatically by Preloader.
+ *
+ * This script uses Composer Autoload file and `require_once` to preload the files in this
+ * list. Add this file to your `php.ini` in `opcache.preload` to preload this list into
+ * PHP at startup. Additionally, this file also includes information about Opcache.
+ *
+ *
+ * Add (or update) this line in `php.ini`:
+ *
+ * opcache.preload=@output
+ *
+ * --- Config ---
+ * Generated at: @generated_at
+ * Opcache
+ *     - Used Memory: @opcache_memory_used B
+ *     - Free Memory: @opcache_memory_free B
+ *     - Wasted Memory: @opcache_memory_wasted B
+ *     - Cached files: @opcache_files
+ *     - Hit rate: @opcache_hit_rate%
+ *     - Misses: @opcache_misses
+ * Preloader config
+ *     - Memory limit: @preloader_memory_limit MB
+ *     - Overwrite: @preloader_overwrite
+ *     - Files excluded: @preloader_excluded
+ *     - Files appended: @preloader_appended
+ */
+
+require_once '@autoload';
+
+$files = [@list];
+
+foreach ($files as $file) {
+    require_once $file;
+}
