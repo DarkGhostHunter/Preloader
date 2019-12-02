@@ -10,7 +10,7 @@ Braden Collum - Unsplash (UL) #9HI8UJMSdZA](https://images.unsplash.com/photo-14
 
 Get the best options to keep your application fast as ever, with just one line.
 
-This package generates a PHP 7.4 preloading script from your Opcache statistics automatically. No need to hack your way in.
+This package generates a [PHP 7.4 preloading](https://www.php.net/manual/en/opcache.configuration.php#ini.opcache.preload) script from your Opcache statistics automatically. No need to hack your way in.
 
 ## Installation
 
