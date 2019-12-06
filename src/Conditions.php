@@ -14,6 +14,17 @@ trait Conditions
     protected bool $shouldRun = true;
 
     /**
+     * Run the Preloader scripts every number of hits in Opcache
+     *
+     * @param  int $hits
+     * @return $this
+     */
+    public function whenEvery(int $hits = 50000) : self
+    {
+        return $this->when(fn () => $hits && $this->opcache->getHits() % $hits === 0);
+    }
+
+    /**
      * Run the Preloader script when Opcache hits reach certain number
      *
      * @param  int $hits
