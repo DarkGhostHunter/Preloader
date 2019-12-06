@@ -14,14 +14,14 @@ trait Conditions
     protected bool $shouldRun = true;
 
     /**
-     * Run the Preloader script after Opcache hits reach certain number
+     * Run the Preloader script when Opcache hits reach certain number
      *
      * @param  int $hits
      * @return $this
      */
     public function whenHits(int $hits = 200000) : self
     {
-        return $this->when(fn () => $hits > $this->opcache->getHits());
+        return $this->when(fn () => $hits === $this->opcache->getHits());
     }
 
     /**
