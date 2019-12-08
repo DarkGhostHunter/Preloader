@@ -18,7 +18,7 @@ Require this using Composer into your project
 
     composer require darkghosthunter/preloader
 
-> This package doesn't enforces `ext-opcache` at install. Just be sure to have it [enabled in your application server](https://www.php.net/manual/en/book.opcache.php).
+> This package doesn't requires `ext-opcache` to install. Just be sure to have it [enabled in your application server](https://www.php.net/manual/en/book.opcache.php).
 
 ## Usage
 
