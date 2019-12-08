@@ -146,7 +146,7 @@ class Preloader
         }
 
         if (! $this->compiler->autoload) {
-            throw new LogicException('Cannot proceed without an Composer Autoload.');
+            throw new LogicException('Cannot proceed without a Composer Autoload.');
         }
 
         if (! file_exists($this->compiler->autoload)) {
