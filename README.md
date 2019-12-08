@@ -220,10 +220,6 @@ $weekAfterDeploy = $app->deploymentTimestamp() + (7*24*60*60);
     ->generate();
 ```
 
-## Contributing
-
-Please see [CONTRIBUTING](CONTRIBUTING.md) for details.
-
 ## Security
 
 If you discover any security related issues, please email darkghosthunter@gmail.com instead of using the issue tracker.
