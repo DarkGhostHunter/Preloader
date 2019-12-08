@@ -898,7 +898,7 @@ class PreloaderTest extends TestCase
     public function testFailsWhenNoAutoload()
     {
         $this->expectException(\LogicException::class);
-        $this->expectErrorMessage('Cannot proceed without an Composer Autoload.');
+        $this->expectErrorMessage('Cannot proceed without a Composer Autoload.');
 
         Preloader::make()
             ->output($this->workdir . '/preload.php')
