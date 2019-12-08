@@ -17,7 +17,7 @@ class Preloader
      *
      * @const
      */
-    protected const STUB = __DIR__ . '/preload.php.stub';
+    protected const STUB_LOCATION = __DIR__ . '/preload.php.stub';
 
     /**
      * Determines if the preload file should be rewritten.
@@ -119,7 +119,7 @@ class Preloader
             return false;
         }
 
-        $this->compiler->contents = file_get_contents(static::STUB);
+        $this->compiler->contents = file_get_contents(static::STUB_LOCATION);
         $this->compiler->opcacheConfig = $this->getOpcacheConfig();
         $this->compiler->preloaderConfig = $this->getPreloaderConfig();
         $this->compiler->list = $this->lister->build();
@@ -146,7 +146,7 @@ class Preloader
         }
 
         if (! $this->compiler->autoload) {
-            throw new LogicException('Cannot proceed without an Composer Autoload.');
+            throw new LogicException('Cannot proceed without a Composer Autoload.');
         }
 
         if (! file_exists($this->compiler->autoload)) {

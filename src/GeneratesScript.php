@@ -15,7 +15,7 @@ trait GeneratesScript
     }
 
     /**
-     * Returns a digestible opcache configuration
+     * Returns a digestible Opcache configuration
      *
      * @return array
      */

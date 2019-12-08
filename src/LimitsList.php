@@ -2,8 +2,6 @@
 
 namespace DarkGhostHunter\Preloader;
 
-use RuntimeException;
-
 trait LimitsList
 {
     /**

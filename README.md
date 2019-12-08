@@ -10,7 +10,7 @@ Braden Collum - Unsplash (UL) #9HI8UJMSdZA](https://images.unsplash.com/photo-14
 
 Get the best options to keep your application fast as ever, with just one line.
 
-This package generates a PHP 7.4 preloading script from your Opcache statistics automatically. No need to hack your way in.
+This package generates a [PHP 7.4 preloading](https://www.php.net/manual/en/opcache.configuration.php#ini.opcache.preload) script from your Opcache statistics automatically. No need to hack your way in.
 
 ## Installation
 
@@ -18,7 +18,7 @@ Require this using Composer into your project
 
     composer require darkghosthunter/preloader
 
-> This package doesn't enforces `ext-opcache` at install. Just be sure to have it [enabled in your application server](https://www.php.net/manual/en/book.opcache.php).
+> This package doesn't requires `ext-opcache` to install. Just be sure to have it [enabled in your application server](https://www.php.net/manual/en/book.opcache.php).
 
 ## Usage
 
@@ -47,15 +47,17 @@ Then, tell PHP to use this file as a preloader at startup in your `php.ini`.
 opcache.preload=/www/app/preload.php
 ```
 
-Restart your PHP process using Opcache and that's all, you're good.
+Restart your PHP process that's using Opcache, and that's all, you're good.
 
 > If you use Preloader when Opcache is disabled or without hits, you will get an Exception.
 
 ## How it works
 
-This package will ask Opcache for statistics about what files are the most requested.
+This package will ask Opcache for statistics about what files are the most requested. You can [check this article in Medium about that preload](https://medium.com/p/9ede756f292c/).
 
 Since the best statistics are those you get after your application has been running for a while, you can use your own mechanisms (or the ones provided by the class) to compile the list only after certain conditions are met.
+
+![](https://miro.medium.com/max/1365/1*Zp-rR9-dPNn55L8GjSUpJg.png)
 
 Don't worry, you can configure what and how compile the list.
 
@@ -63,38 +65,51 @@ Don't worry, you can configure what and how compile the list.
 
 Yuo can configure the Preloader to run when a condition is met, limit the file list, and where to output the compiled preload list.
 
-After the Opcache hits reach a certain number, the Preloader will generate the script, not before.
-
 ### `when()` (optional)
 
 If you don't feel like using Opcache hits, you can just use `when()`. The Preloader will proceed when the variable being passed evaluates to `true`, which will be in your hands.
 
-    Preloader::make()->when(false); // You will never run, ha ha ha!
+```php
+Preloader::make()->when(false); // You will never run, ha ha ha!
+```
 
 You can also use a Closure (Arrow function or any other callable) that returns `true`.
 
-    Preloader::make()->when(fn () => $app->cache()->get('should_run'));
-
+```php
+Preloader::make()->when(fn () => $app->cache()->get('should_run'));
+```
 
 #### `whenHits()` (optional)
 
 This is the best way to gather good statistics for a good preloading list if you don't know the real load of your application.
 
-    Preloader::make()->whenHits(200000): // After a given number of hits.
+```php
+Preloader::make()->whenHits(200000); // After a given number of hits.
+```
+
+The list will be generated when the number of hits set are **above** the reported by Opcache.
+
+> Watch out! If you're using `overwrite()`, the script will be regenerated every time after the number of hits are reached!
 
 #### `whenOneIn()` (optional)
 
-This is another helper for conditioning the generation. The list will be generated one in a given number of chances (the higher is it, the more rare till be). 
+The list will be generated one in a given number of chances (the higher is it, the less often will run). 
 
-    Prealoder::make()->whenOneIn(2000); // 1 in 2,000 chances.
+```php
+Preloader::make()->whenOneIn(2000); // 1 in 2,000 chances.
+```
 
 This may come in handy using it with `overwrite()` to constantly recreate the list.
 
-    Prealoder::make()->overwrite()->whenOneIn(2000);
+```php
+Preloader::make()->overwrite()->whenOneIn(2000);
+```
 
 ### `memory()` (optional, default)
 
-    Preloader::make()->memory(32);
+```php
+Preloader::make()->memory(32);
+```
 
 Set your memory limit in **MB**. The default of 32MB is enough for *most* applications. The Preloader will generate a list of files until that memory limit is reached.
 
@@ -104,39 +119,66 @@ This takes into account the `memory_consumption` key of each script cached in Op
 
 ### `exclude()` (optional)
 
-You can exclude from the list given by Opcache using `exclude()`, which accepts a single file or an array of files.
+You can exclude files from the list given by Opcache using `exclude()`, which accepts a single file or an array of files. These are passed to the `glob()` method. These file paths **must be absolute**.
 
-    Preloader::make()->exclude(['foo.php', 'bar.php']);
+```php
+Preloader::make()->exclude([
+    '/app/foo.php', 
+    '/app/bar.php',
+    '/app/quz/*.php'
+]);
+```
 
-These excluded files will be excluded from the list generation, also excluding them from memory limits.
+These excluded files will be excluded from the list generation, and won't count for memory limits.
 
-> Preloader library files are automatically excluded.
+Preloader library files are automatically excluded. You can disable this using `includePreloader()`:
+
+```php
+Preloader::make()->includePreloader()
+    ->exclude([
+        '/app/foo.php', 
+        '/app/bar.php',
+        '/app/quz/*.php'
+    ]);
+```
 
 ### `append()` (optional)
 
-    Preloader::make()->append(['foo.php', 'bar.php']);
+Of course you can add files using absolute paths manually to the preload script to be generated. Just issue them with `append()`. These are passed to the `glob()` method. These file paths **must be absolute**.
 
-Of course you can add files using absolute paths manually to the preload script to be generated. Just issue them with `append()`.
+```php
+Preloader::make()->append([
+    '/app/foo.php', 
+    '/app/bar.php',
+    '/app/quz/*.php'
+]);
+```
 
-Prepending files will put them **after** the list generation, so they won't count list or memory limits.
+Prepending files will put them **after** the list generation, so they won't count for the list memory limit.
 
-    Preloader::make()->top(0.5)->memory(64)->append('foo.bar');
+```php
+Preloader::make()->memory(64)->append('foo.bar');
+```
 
 > Any duplicated file appended will be ignored since the list will remove them automatically before compiling the script. 
 
 ### `output()` (required)
 
-We need to know where to output the script. It's recommended to do it in the same application folder, since most PHP processes will have access to write in it. If not, you're free to point out where.
+We need to know where to output the script. It's recommended to do it in the same application folder, since most PHP processes will have access to write inside the same directory. If not, you're free to point out where.
 
-    Preloader::make()->output(__DIR__ . '/../../my-preloader.php'); 
+```php
+Preloader::make()->output(__DIR__ . '/../../my-preloader.php'); 
+```
 
 ### `overwrite()` (optional)
 
-Sometimes you may have run your preloader script already. To avoid replacing the list with another one, Preloader by default doesn't do nothing when it detects the file already exists.
+Sometimes you may have run your preloader script already. To avoid replacing the list with another one, Preloader by default doesn't do nothing when it detects the script file already exists.
 
 To change this behaviour, you can use the `overwrite()` method to instruct Preloader to always rewrite the file.
 
-    Preloader::make()->overwrite()->generate();
+```php
+Preloader::make()->overwrite()->generate();
+```
 
 > Watch out using this along conditions like `whenHits()` and `when()`. If the condition are true, the Preloader will overwrite the preload script... over and over and over again! 
 
@@ -144,9 +186,11 @@ To change this behaviour, you can use the `overwrite()` method to instruct Prelo
 
 Once your Preloader configuration is ready, you can generate the list using `generate()`.
 
-    Preloader::make()->generate();
+```php
+Preloader::make()->generate();
+```
 
-This will automatically create a PHP-ready script to preload your application. It will return `true` on success, and `false` when the when the conditions are not met or an existing preload file exists.
+This will automatically create a PHP-ready script to preload your application. It will return `true` on success, and `false` when the when the conditions are not met or an existing preload file exists that shouldn't be overwritten.
 
 ## Give me an example
 
@@ -175,10 +219,6 @@ $weekAfterDeploy = $app->deploymentTimestamp() + (7*24*60*60);
     ->output(PHP_LOCALSTATEDIR . '/preload.php') // put it in /var.
     ->generate();
 ```
-
-## Contributing
-
-Please see [CONTRIBUTING](CONTRIBUTING.md) for details.
 
 ## Security
 
