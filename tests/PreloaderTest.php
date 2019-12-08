@@ -314,8 +314,15 @@ class PreloaderTest extends TestCase
                 ->generate()
         );
 
-        $this->assertTrue(
+        $this->assertFalse(
             $preloader->whenHits(1001)
+                ->autoload($this->workdir . '/autoload.php')
+                ->output($this->workdir . '/preload.php')
+                ->generate()
+        );
+
+        $this->assertTrue(
+            $preloader->whenHits(1002)
                 ->autoload($this->workdir . '/autoload.php')
                 ->output($this->workdir . '/preload.php')
                 ->generate()
@@ -708,6 +715,81 @@ class PreloaderTest extends TestCase
             "    'bar'," . \PHP_EOL .
             "    'foo'," . \PHP_EOL .
             "    'qux'" . \PHP_EOL .
+            '];';
+
+        $this->assertStringContainsString($files, $contents);
+    }
+
+    public function testIncludesPackageFiles()
+    {
+        $opcache = $this->createMock(Opcache::class);
+
+        $package = array_flip([
+            realpath(__DIR__ . '/../src/Conditions.php'),
+            realpath(__DIR__ . '/../src/GeneratesScript.php'),
+            realpath(__DIR__ . '/../src/LimitsList.php'),
+            realpath(__DIR__ . '/../src/ManagesFiles.php'),
+            realpath(__DIR__ . '/../src/Opcache.php'),
+            realpath(__DIR__ . '/../src/Preloader.php'),
+            realpath(__DIR__ . '/../src/PreloaderCompiler.php'),
+            realpath(__DIR__ . '/../src/PreloaderLister.php'),
+        ]);
+
+        $opcache->method('isEnabled')
+            ->willReturn(true);
+        $opcache->method('getNumberCachedScripts')
+            ->willReturn(count($this->list) + count($package));
+        $opcache->method('getHits')
+            ->willReturn(1001);
+        $opcache->method('getStatus')
+            ->willReturn([
+                'memory_usage' => [
+                    'used_memory' => rand(1000, 999999),
+                    'free_memory' => rand(1000, 999999),
+                    'wasted_memory' => rand(1000, 999999),
+                ],
+                'opcache_statistics' => [
+                    'num_cached_scripts' => rand(1000, 999999),
+                    'opcache_hit_rate' => rand(1, 99)/100,
+                    'misses' => rand(1000, 999999),
+                ],
+            ]);
+
+        $opcache->method('getScripts')
+            ->willReturn(array_merge($this->list, array_map(function () {
+                return [
+                    'hits' => 1,
+                    'memory_consumption' => 1,
+                    'last_used_timestamp' => 1400000000
+                ];
+            }, $package)));
+
+        $preloader = new Preloader(new PreloaderCompiler, new PreloaderLister($opcache), $opcache);
+
+        $preloader
+            ->autoload($autoload = $this->workdir . '/autoload.php')
+            ->exclude([
+                'quz',
+            ])
+            ->includePreloader()
+            ->output($this->workdir . '/preload.php')
+            ->generate();
+
+        $contents = file_get_contents($this->workdir . '/preload.php');
+
+        $files = '$files = [' . \PHP_EOL .
+            "    'bar'," . \PHP_EOL .
+            "    'foo'," . \PHP_EOL .
+            "    'qux'," . \PHP_EOL .
+            "    'baz'," . \PHP_EOL .
+            "    '" . realpath(__DIR__ . '/../src/Conditions.php') . "',". \PHP_EOL .
+            "    '" . realpath(__DIR__ . '/../src/GeneratesScript.php') . "',". \PHP_EOL .
+            "    '" . realpath(__DIR__ . '/../src/LimitsList.php') . "',". \PHP_EOL .
+            "    '" . realpath(__DIR__ . '/../src/ManagesFiles.php') . "',". \PHP_EOL .
+            "    '" . realpath(__DIR__ . '/../src/Opcache.php') . "',". \PHP_EOL .
+            "    '" . realpath(__DIR__ . '/../src/Preloader.php') . "',". \PHP_EOL .
+            "    '" . realpath(__DIR__ . '/../src/PreloaderCompiler.php') . "',". \PHP_EOL .
+            "    '" . realpath(__DIR__ . '/../src/PreloaderLister.php') . "'". \PHP_EOL .
             '];';
 
         $this->assertStringContainsString($files, $contents);

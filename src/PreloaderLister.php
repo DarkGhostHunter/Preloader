@@ -26,6 +26,13 @@ class PreloaderLister
     public array $exclude = [];
 
     /**
+     * If the Preloader package should also be included.
+     *
+     * @var bool
+     */
+    public bool $includePreloader = false;
+
+    /**
      * Opcache class access
      *
      * @var \DarkGhostHunter\Preloader\Opcache
@@ -136,7 +143,7 @@ class PreloaderLister
      */
     protected function excludedPackageFiles()
     {
-        return [
+        return $this->includePreloader ? [] : [
             realpath(__DIR__ . '/Conditions.php'),
             realpath(__DIR__ . '/GeneratesScript.php'),
             realpath(__DIR__ . '/LimitsList.php'),

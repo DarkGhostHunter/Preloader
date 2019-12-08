@@ -5,6 +5,19 @@ namespace DarkGhostHunter\Preloader;
 trait ManagesFiles
 {
     /**
+     * Include the Preloader files in the file list.
+     *
+     * @param  bool $include
+     * @return $this
+     */
+    public function includePreloader(bool $include = true)
+    {
+        $this->lister->includePreloader = $include;
+
+        return $this;
+    }
+
+    /**
      * Append a list of files to the preload list. These won't count for file and memory limits.
      *
      * @param $files
