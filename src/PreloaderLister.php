@@ -105,9 +105,6 @@ class PreloaderLister
 
         $cumulative = 0;
 
-        // The memory of each script is calculated in bytes, so we need to transform that.
-        $limit = $this->memory * 1024**2;
-
         $resulting = [];
 
         // We will cycle through each file and check how much memory it consumes. If adding
@@ -143,6 +140,6 @@ class PreloaderLister
      */
     protected function excludedPackageFiles()
     {
-        return $this->includePreloader ? [] : glob(realpath(__DIR__ . '/') . '/*');
+        return $this->includePreloader ? [] : glob(realpath(__DIR__ . '/') . '/*.php');
     }
 }
