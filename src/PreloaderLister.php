@@ -140,6 +140,8 @@ class PreloaderLister
      */
     protected function excludedPackageFiles()
     {
-        return $this->includePreloader ? [] : glob(realpath(__DIR__ . '/') . '/*.php');
+        return $this->includePreloader
+            ? []
+            : array_map(fn ($entry) => realpath($entry), glob(realpath(__DIR__ . '/') . '/*.php'));
     }
 }
