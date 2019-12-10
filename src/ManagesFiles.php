@@ -44,7 +44,7 @@ trait ManagesFiles
     }
 
     /**
-     * take every file string and pass it to the glob function.
+     * Take every file string and pass it to the glob function.
      *
      * @param array $files
      * @return array
@@ -55,7 +55,7 @@ trait ManagesFiles
 
         // We will cycle trough each "file" and save the resulting array given by glob.
         // If the glob returns false, we will trust the developer goodwill and add it
-        // anyway, since the file may not exists until the app generates something.
+        // anyway, since the file may not yet exist until after the preload compile.
         foreach ($files as $file) {
             $paths[] = glob($file) ?: [$file];
         }
