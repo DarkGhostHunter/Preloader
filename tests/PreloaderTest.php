@@ -15,27 +15,27 @@ class PreloaderTest extends TestCase
     protected array $list = [
         'foo' => [ // 3
             'hits' => 10,
-            'memory_consumption' => 1 * (1024 ^ 2),
+            'memory_consumption' => 1 * (1024 ** 2),
             'last_used_timestamp' => 1400000000
         ],
         'bar' => [ // 1
             'hits' => 20,
-            'memory_consumption' => 3 * (1024 ^ 2),
+            'memory_consumption' => 3 * (1024 ** 2),
             'last_used_timestamp' => 1400000002
         ],
         'quz' => [ // 2
             'hits' => 20,
-            'memory_consumption' => 5 * (1024 ^ 2),
+            'memory_consumption' => 5 * (1024 ** 2),
             'last_used_timestamp' => 1400000001
         ],
         'qux' => [ // 4
             'hits' => 5,
-            'memory_consumption' => 5 * (1024 ^ 2),
+            'memory_consumption' => 5 * (1024 ** 2),
             'last_used_timestamp' => 1400000010
         ],
         'baz' => [ // 5
             'hits' => 5,
-            'memory_consumption' => 6 * (1024 ^ 2),
+            'memory_consumption' => 6 * (1024 ** 2),
             'last_used_timestamp' => 1400000010
         ]
     ];
@@ -134,13 +134,16 @@ class PreloaderTest extends TestCase
             '];';
 
         $this->assertStringContainsString($files, $contents);
-        $this->assertStringContainsString('opcache.preload=' . $output, $contents);
+        $this->assertStringContainsString('opcache.preload=' . realpath($output), $contents);
 
         $this->assertRegExp('/([0-9]+)-(0{0,1}[1-9]|10|11|12)-([0-2]{0,1}[1-9]|10|20|30|31)\s([01]{0,1}[0-9]|2[0-3]):([0-5]{0,1}[0-9]):([0-5]{0,1}[0-9])/', $contents);
 
-        $this->assertStringContainsString('Used Memory: ' . $usedMemory, $contents);
-        $this->assertStringContainsString('Free Memory: ' . $freeMemory, $contents);
-        $this->assertStringContainsString('Wasted Memory: ' . $wastedMemory, $contents);
+        $this->assertStringContainsString('Used Memory: '
+            . number_format($usedMemory/1024**2, 1, '.' ,''), $contents);
+        $this->assertStringContainsString('Free Memory: '
+            . number_format($freeMemory/1024**2, 1, '.' ,''), $contents);
+        $this->assertStringContainsString('Wasted Memory: '
+            . number_format($wastedMemory/1024**2, 1, '.' ,''), $contents);
         $this->assertStringContainsString('Cached files: ' . $cachedScripts, $contents);
         $this->assertStringContainsString('Hit rate: ' . $hitRate * 100 . '%', $contents);
 
@@ -150,10 +153,10 @@ class PreloaderTest extends TestCase
         $this->assertStringContainsString('Files excluded: 0', $contents);
         $this->assertStringContainsString('Files appended: 0', $contents);
 
-        $this->assertStringContainsString("require_once '{$autoload}';", $contents);
+        $this->assertStringContainsString("require_once '". realpath($autoload) . "';", $contents);
     }
 
-    public function testMemoryLimit()
+    public function testNoMemoryLimit()
     {
         $opcache = $this->createMock(Opcache::class);
 
@@ -231,7 +234,7 @@ class PreloaderTest extends TestCase
         $this->assertStringContainsString('Memory limit: 0 MB', $contents);
     }
 
-    public function testNoMemoryLimit()
+    public function testMemoryLimit()
     {
         $opcache = $this->createMock(Opcache::class);
 
@@ -272,7 +275,9 @@ class PreloaderTest extends TestCase
         $files = '$files = [' . \PHP_EOL .
             "    'bar'," . \PHP_EOL .
             "    'quz'," . \PHP_EOL .
-            "    'foo'" . \PHP_EOL .
+            "    'foo'," . \PHP_EOL .
+            "    'qux'," . \PHP_EOL .
+            "    'baz'" . \PHP_EOL .
             '];';
 
         $this->assertStringContainsString($files, $contents);
