@@ -15,9 +15,9 @@
  * --- Config ---
  * Generated at: @generated_at
  * Opcache
- *     - Used Memory: @opcache_memory_used B
- *     - Free Memory: @opcache_memory_free B
- *     - Wasted Memory: @opcache_memory_wasted B
+ *     - Used Memory: @opcache_memory_used MB
+ *     - Free Memory: @opcache_memory_free MB
+ *     - Wasted Memory: @opcache_memory_wasted MB
  *     - Cached files: @opcache_files
  *     - Hit rate: @opcache_hit_rate%
  *     - Misses: @opcache_misses
