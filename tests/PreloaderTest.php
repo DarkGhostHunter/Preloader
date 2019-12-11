@@ -275,9 +275,7 @@ class PreloaderTest extends TestCase
         $files = '$files = [' . \PHP_EOL .
             "    'bar'," . \PHP_EOL .
             "    'quz'," . \PHP_EOL .
-            "    'foo'," . \PHP_EOL .
-            "    'qux'," . \PHP_EOL .
-            "    'baz'" . \PHP_EOL .
+            "    'foo'" . \PHP_EOL .
             '];';
 
         $this->assertStringContainsString($files, $contents);
