@@ -37,5 +37,15 @@ require_once '@autoload';
 $files = [@list];
 
 foreach ($files as $file) {
-    require_once $file;
+    try {
+        if (!@include_once($file) || !file_exists($file)) {
+            throw new \Exception($file . ' does not exist');
+        }
+
+        require_once $file;
+    } catch (\Throwable $e) {
+        echo 'Message: ' . $e->getMessage() . \PHP_EOL;
+        echo 'File: ' . $file . \PHP_EOL;
+    }
 }
+
