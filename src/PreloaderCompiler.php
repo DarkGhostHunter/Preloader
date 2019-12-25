@@ -76,9 +76,14 @@ class PreloaderCompiler
             return $path;
         }
 
+        // @codeCoverageIgnoreStart
+        // We will try to create a dummy file and just then get the real path of it.
+        // After getting the real path, we will delete it and return the path. If
+        // we can't, then we will just return the output path string as-it-is.
         if(! touch($this->output)) {
             return $this->output;
         }
+        // @codeCoverageIgnoreEnd
 
         $path = realpath($this->output);
 
