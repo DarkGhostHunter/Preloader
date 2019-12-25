@@ -2,7 +2,6 @@
 
 namespace DarkGhostHunter\Preloader;
 
-use DateTime;
 use const PHP_EOL;
 
 class PreloaderCompiler
@@ -57,13 +56,35 @@ class PreloaderCompiler
     public function compile() : string
     {
         $replacing = array_merge($this->preloaderConfig, $this->opcacheConfig, [
-            '@output' => $this->output,
+            '@output' => $this->scriptRealPath(),
             '@generated_at' => date('Y-m-d H:i:s e'),
-            '@autoload' => $this->autoload,
+            '@autoload' => realpath($this->autoload),
             '@list' => $this->parseList()
         ]);
 
         return str_replace(array_keys($replacing), $replacing, $this->contents);
+    }
+
+    /**
+     * Returns the output file real path
+     *
+     * @return string
+     */
+    protected function scriptRealPath()
+    {
+        if ($path = realpath($this->output)) {
+            return $path;
+        }
+
+        if(! touch($this->output)) {
+            return $this->output;
+        }
+
+        $path = realpath($this->output);
+
+        unlink($this->output);
+
+        return $path;
     }
 
     /**

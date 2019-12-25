@@ -84,7 +84,8 @@ class PreloaderLister
         array_multisort(
             array_column($scripts, 'hits'), SORT_DESC,
             array_column($scripts, 'last_used_timestamp'), SORT_DESC,
-            $scripts);
+            $scripts
+        );
 
         return $scripts;
     }
@@ -98,14 +99,11 @@ class PreloaderLister
     protected function cutByMemoryLimit($files)
     {
         // Exit early if the memory limit is zero (disabled).
-        if (! $this->memory) {
+        if (! $limit = $this->memory * 1024**2) {
             return array_keys($files);
         }
 
         $cumulative = 0;
-
-        // The memory of each script is calculated in bytes, so we need to transform that.
-        $limit = $this->memory * 1024 ^ 2;
 
         $resulting = [];
 
@@ -124,7 +122,6 @@ class PreloaderLister
 
         return $resulting;
     }
-
     /**
      * Exclude files from the list
      *
@@ -143,15 +140,8 @@ class PreloaderLister
      */
     protected function excludedPackageFiles()
     {
-        return $this->includePreloader ? [] : [
-            realpath(__DIR__ . '/Conditions.php'),
-            realpath(__DIR__ . '/GeneratesScript.php'),
-            realpath(__DIR__ . '/LimitsList.php'),
-            realpath(__DIR__ . '/ManagesFiles.php'),
-            realpath(__DIR__ . '/Opcache.php'),
-            realpath(__DIR__ . '/Preloader.php'),
-            realpath(__DIR__ . '/PreloaderLister.php'),
-            realpath(__DIR__ . '/PreloaderCompiler.php'),
-        ];
+        return $this->includePreloader
+            ? []
+            : array_map(fn ($entry) => realpath($entry), glob(realpath(__DIR__ . '/') . '/*.php'));
     }
 }

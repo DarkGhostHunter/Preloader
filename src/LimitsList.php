@@ -5,16 +5,16 @@ namespace DarkGhostHunter\Preloader;
 trait LimitsList
 {
     /**
-     * Memory limit (in MB) to constrain the file list. Minimum is 1.
+     * Memory limit (in MB) to constrain the file list.
      *
-     * @param  int $limit
+     * @param  int|float $limit
      * @return $this
      *
      * @throws \RuntimeException
      */
-    public function memory(int $limit) : self
+    public function memory($limit) : self
     {
-        $this->lister->memory = $limit;
+        $this->lister->memory = (float)$limit;
 
         return $this;
     }
