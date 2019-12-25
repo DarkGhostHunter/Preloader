@@ -63,7 +63,7 @@ Don't worry, you can configure what and how compile the list.
 
 ## Configuration
 
-Yuo can configure the Preloader to run when a condition is met, limit the file list, and where to output the compiled preload list.
+You can configure the Preloader to run when a condition is met, limit the file list, and where to output the compiled preload list.
 
 ### `when()` (optional)
 
