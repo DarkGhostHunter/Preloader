@@ -970,6 +970,43 @@ class PreloaderTest extends TestCase
             ->generate();
     }
 
+    public function testList()
+    {
+        $opcache = $this->createMock(Opcache::class);
+
+        $opcache->method('isEnabled')
+            ->willReturn(true);
+        $opcache->method('getNumberCachedScripts')
+            ->willReturn(count($this->list));
+        $opcache->method('getHits')
+            ->willReturn(1001);
+        $opcache->method('getStatus')
+            ->willReturn([
+                'memory_usage' => [
+                    'used_memory' => rand(1000, 999999),
+                    'free_memory' => rand(1000, 999999),
+                    'wasted_memory' => rand(1000, 999999),
+                ],
+                'opcache_statistics' => [
+                    'num_cached_scripts' => rand(1000, 999999),
+                    'opcache_hit_rate' => rand(1, 99)/100,
+                    'misses' => rand(1000, 999999),
+                ],
+            ]);
+        $opcache->method('getScripts')
+            ->willReturn($this->list);
+
+        $preloader = new Preloader(new PreloaderCompiler, new PreloaderLister($opcache), $opcache);
+
+        $list = $preloader
+                ->autoload($autoload = $this->workdir . '/autoload.php')
+                ->memory(10)
+                ->output($this->workdir . '/preload.php')
+                ->list();
+
+        $this->assertEquals(['bar', 'quz', 'foo'], $list);
+    }
+
     protected function tearDown() : void
     {
         parent::tearDown();

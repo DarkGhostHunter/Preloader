@@ -108,6 +108,16 @@ class Preloader
     }
 
     /**
+     * Returns the raw list of files to include in the script
+     *
+     * @return array
+     */
+    public function list()
+    {
+        return $this->lister->build();
+    }
+
+    /**
      * Generates a preload script of files.
      *
      * @return bool
@@ -122,7 +132,7 @@ class Preloader
         $this->compiler->contents = file_get_contents(static::STUB_LOCATION);
         $this->compiler->opcacheConfig = $this->getOpcacheConfig();
         $this->compiler->preloaderConfig = $this->getPreloaderConfig();
-        $this->compiler->list = $this->lister->build();
+        $this->compiler->list = $this->list();
 
         // @codeCoverageIgnoreStart
         if (! file_put_contents($this->output, $this->compiler->compile(), LOCK_EX)) {

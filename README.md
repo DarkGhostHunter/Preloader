@@ -180,7 +180,7 @@ To change this behaviour, you can use the `overwrite()` method to instruct Prelo
 Preloader::make()->overwrite()->generate();
 ```
 
-> Watch out using this along conditions like `whenHits()` and `when()`. If the condition are true, the Preloader will overwrite the preload script... over and over and over again! 
+> Watch out using this along conditions like `whenHits()` and `when()`. If the condition are true, the Preloader will overwrite the preload script... over and over and over again!
 
 ### `generate()` (required)
 
@@ -190,7 +190,17 @@ Once your Preloader configuration is ready, you can generate the list using `gen
 Preloader::make()->generate();
 ```
 
-This will automatically create a PHP-ready script to preload your application. It will return `true` on success, and `false` when the when the conditions are not met or an existing preload file exists that shouldn't be overwritten.
+This will automatically create a PHP-ready script to preload your application. It will return `true` on success, and `false` when the when the conditions are not met or an existing preload file exists that shouldn't be overwritten. 
+
+### `list()` (alternative)
+
+Alternatively, you can retrieve the raw list of files as an array using `list()`.
+
+```php
+Preloader::make()->list();
+```
+
+This may become handy if you have your own script, or you just want to tinker around it.
 
 ## Give me an example
 
