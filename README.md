@@ -12,6 +12,8 @@ Get the best options to keep your application fast as ever, with just one line.
 
 This package generates a [PHP 7.4 preloading](https://www.php.net/manual/en/opcache.configuration.php#ini.opcache.preload) script from your Opcache statistics automatically. No need to hack your way in.
 
+> If you're looking for preloading your Laravel project, check [Laraload](https://github.com/DarkGhostHunter/Laraload).
+
 ## Installation
 
 Require this using Composer into your project
