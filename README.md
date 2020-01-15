@@ -14,6 +14,28 @@ This package generates a [PHP 7.4 preloading](https://www.php.net/manual/en/opca
 
 > If you're looking for preloading your Laravel project, check [Laraload](https://github.com/DarkGhostHunter/Laraload).
 
+## Table of Contents
+
+- [Opcache Preloader](#opcache-preloader)
+  * [Installation](#installation)
+  * [Usage](#usage)
+  * [How it works](#how-it-works)
+  * [Configuration](#configuration)
+    + [`when()` (optional)](#when-optional)
+      - [`whenHits()` (optional)](#whenhits-optional)
+      - [`whenOneIn()` (optional)](#whenonein-optional)
+    + [`memory()` (optional, default)](#memory-optional-default)
+    + [`exclude()` (optional)](#exclude-optional)
+    + [`append()` (optional)](#append-optional)
+    + [`output()` (required)](#output-required)
+    + [`overwrite()` (optional)](#overwrite-optional)
+    + [`shouldCompile()|shouldRequire()` (optional)](#shouldcompileshouldrequire-optional)
+    + [`generate()` (required)](#generate-required)
+    + [`list()` (alternative)](#list-alternative)
+  * [Give me an example](#give-me-an-example)
+  * [Security](#security)
+  * [License](#license)
+
 ## Installation
 
 Require this using Composer into your project
