@@ -31,7 +31,7 @@ trait GeneratesScript
             '@opcache_memory_wasted' =>
                 number_format($opcache['memory_usage']['wasted_memory'] / 1024**2, 1, '.', ''),
             '@opcache_files' => $opcache['opcache_statistics']['num_cached_scripts'],
-            '@opcache_hit_rate' => $opcache['opcache_statistics']['opcache_hit_rate'] * 100,
+            '@opcache_hit_rate' => number_format($opcache['opcache_statistics']['opcache_hit_rate'], 2, '.', ''),
             '@opcache_misses' => $opcache['opcache_statistics']['misses'],
         ];
     }
@@ -50,5 +50,4 @@ trait GeneratesScript
             '@preloader_excluded' => count($this->lister->exclude),
         ];
     }
-
 }

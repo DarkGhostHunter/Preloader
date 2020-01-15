@@ -12,6 +12,30 @@ Get the best options to keep your application fast as ever, with just one line.
 
 This package generates a [PHP 7.4 preloading](https://www.php.net/manual/en/opcache.configuration.php#ini.opcache.preload) script from your Opcache statistics automatically. No need to hack your way in.
 
+> If you're looking for preloading your Laravel project, check [Laraload](https://github.com/DarkGhostHunter/Laraload).
+
+## Table of Contents
+
+- [Opcache Preloader](#opcache-preloader)
+  * [Installation](#installation)
+  * [Usage](#usage)
+  * [How it works](#how-it-works)
+  * [Configuration](#configuration)
+    + [`when()` (optional)](#when-optional)
+      - [`whenHits()` (optional)](#whenhits-optional)
+      - [`whenOneIn()` (optional)](#whenonein-optional)
+    + [`memory()` (optional, default)](#memory-optional-default)
+    + [`exclude()` (optional)](#exclude-optional)
+    + [`append()` (optional)](#append-optional)
+    + [`output()` (required)](#output-required)
+    + [`overwrite()` (optional)](#overwrite-optional)
+    + [`shouldCompile()|shouldRequire()` (optional)](#shouldcompileshouldrequire-optional)
+    + [`generate()` (required)](#generate-required)
+    + [`list()` (alternative)](#list-alternative)
+  * [Give me an example](#give-me-an-example)
+  * [Security](#security)
+  * [License](#license)
+
 ## Installation
 
 Require this using Composer into your project
@@ -63,7 +87,7 @@ Don't worry, you can configure what and how compile the list.
 
 ## Configuration
 
-Yuo can configure the Preloader to run when a condition is met, limit the file list, and where to output the compiled preload list.
+You can configure the Preloader to run when a condition is met, limit the file list, and where to output the compiled preload list.
 
 ### `when()` (optional)
 
@@ -87,9 +111,9 @@ This is the best way to gather good statistics for a good preloading list if you
 Preloader::make()->whenHits(200000); // After a given number of hits.
 ```
 
-The list will be generated when the number of hits set are **above** the reported by Opcache.
+The list will be generated when the number of hits set are **above** the reported by Opcache. This will avoid generating the preload list until the application have done many runs.
 
-> Watch out! If you're using `overwrite()`, the script will be regenerated every time after the number of hits are reached!
+> Watch out! If you're using `overwrite()`, the script will be regenerated every time **after** the number of hits are reached!
 
 #### `whenOneIn()` (optional)
 
@@ -180,7 +204,17 @@ To change this behaviour, you can use the `overwrite()` method to instruct Prelo
 Preloader::make()->overwrite()->generate();
 ```
 
-> Watch out using this along conditions like `whenHits()` and `when()`. If the condition are true, the Preloader will overwrite the preload script... over and over and over again! 
+> Watch out using this along conditions like `whenHits()` and `when()`. If the condition are true, the Preloader will overwrite the preload script... over and over and over again!
+
+### `shouldCompile()|shouldRequire()` (optional)
+
+By default, the Preloader will upload the file to Opcache using `require_once`. Since this _executes_ the file itself to resolve the links preemptively, some projects may have problems using this.
+
+You can change this using `shouldCompile()` to use the `opcache_compile_file()`. This will read the file, but not resolve the links, so the last files on the list may have dangling links (like Traits, Interfaces and other Classes) and some warnings when the file is read by Opcache.
+
+```php
+Preloader::make()->shouldCompile()->generate();
+```
 
 ### `generate()` (required)
 
@@ -190,7 +224,17 @@ Once your Preloader configuration is ready, you can generate the list using `gen
 Preloader::make()->generate();
 ```
 
-This will automatically create a PHP-ready script to preload your application. It will return `true` on success, and `false` when the when the conditions are not met or an existing preload file exists that shouldn't be overwritten.
+This will automatically create a PHP-ready script to preload your application. It will return `true` on success, and `false` when the when the conditions are not met or an existing preload file exists that shouldn't be overwritten. 
+
+### `list()` (alternative)
+
+Alternatively, you can retrieve the raw list of files as an array using `list()`.
+
+```php
+Preloader::make()->list();
+```
+
+This may become handy if you have your own script, or you just want to tinker around it.
 
 ## Give me an example
 
