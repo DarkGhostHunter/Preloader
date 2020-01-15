@@ -19,7 +19,7 @@ trait Conditions
      */
     public function whenHits(int $hits = 200000) : self
     {
-        return $this->when($hits <= $this->opcache->getHits());
+        return $this->when($hits > $this->opcache->getHits());
     }
 
     /**
