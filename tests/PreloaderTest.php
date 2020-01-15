@@ -2,11 +2,13 @@
 
 namespace Tests;
 
+use LogicException;
 use DarkGhostHunter\Preloader\Opcache;
 use DarkGhostHunter\Preloader\Preloader;
 use PHPUnit\Framework\TestCase;
 use DarkGhostHunter\Preloader\PreloaderLister;
 use DarkGhostHunter\Preloader\PreloaderCompiler;
+use const PHP_EOL;
 
 class PreloaderTest extends TestCase
 {
@@ -107,7 +109,7 @@ class PreloaderTest extends TestCase
                 ],
                 'opcache_statistics' => [
                     'num_cached_scripts' => $cachedScripts = rand(1000, 999999),
-                    'opcache_hit_rate' => $hitRate = rand(1, 99)/100,
+                    'opcache_hit_rate' => $hitRate = rand(100, 9999)/100,
                     'misses' => $misses = rand(1000, 999999),
                 ],
             ]);
@@ -125,12 +127,12 @@ class PreloaderTest extends TestCase
 
         $contents = file_get_contents($this->workdir . '/preload.php');
 
-        $files = '$files = [' . \PHP_EOL .
-            "    'bar'," . \PHP_EOL .
-            "    'quz'," . \PHP_EOL .
-            "    'foo'," . \PHP_EOL .
-            "    'qux'," . \PHP_EOL .
-            "    'baz'" . \PHP_EOL .
+        $files = '$files = [' . PHP_EOL .
+            "    'bar'," . PHP_EOL .
+            "    'quz'," . PHP_EOL .
+            "    'foo'," . PHP_EOL .
+            "    'qux'," . PHP_EOL .
+            "    'baz'" . PHP_EOL .
             '];';
 
         $this->assertStringContainsString($files, $contents);
@@ -145,7 +147,7 @@ class PreloaderTest extends TestCase
         $this->assertStringContainsString('Wasted Memory: '
             . number_format($wastedMemory/1024**2, 1, '.' ,''), $contents);
         $this->assertStringContainsString('Cached files: ' . $cachedScripts, $contents);
-        $this->assertStringContainsString('Hit rate: ' . $hitRate * 100 . '%', $contents);
+        $this->assertStringContainsString('Hit rate: ' . number_format($hitRate, '2', '.', ',') . '%', $contents);
 
         $this->assertStringContainsString('Misses: ' . $misses, $contents);
         $this->assertStringContainsString('Memory limit: 32 MB', $contents);
@@ -222,12 +224,12 @@ class PreloaderTest extends TestCase
 
         $contents = file_get_contents($this->workdir . '/preload.php');
 
-        $files = '$files = [' . \PHP_EOL .
-            "    'bar'," . \PHP_EOL .
-            "    'quz'," . \PHP_EOL .
-            "    'foo'," . \PHP_EOL .
-            "    'baz'," . \PHP_EOL .
-            "    'qux'" . \PHP_EOL .
+        $files = '$files = [' . PHP_EOL .
+            "    'bar'," . PHP_EOL .
+            "    'quz'," . PHP_EOL .
+            "    'foo'," . PHP_EOL .
+            "    'baz'," . PHP_EOL .
+            "    'qux'" . PHP_EOL .
             '];';
 
         $this->assertStringContainsString($files, $contents);
@@ -272,10 +274,10 @@ class PreloaderTest extends TestCase
 
         $contents = file_get_contents($this->workdir . '/preload.php');
 
-        $files = '$files = [' . \PHP_EOL .
-            "    'bar'," . \PHP_EOL .
-            "    'quz'," . \PHP_EOL .
-            "    'foo'" . \PHP_EOL .
+        $files = '$files = [' . PHP_EOL .
+            "    'bar'," . PHP_EOL .
+            "    'quz'," . PHP_EOL .
+            "    'foo'" . PHP_EOL .
             '];';
 
         $this->assertStringContainsString($files, $contents);
@@ -481,12 +483,12 @@ class PreloaderTest extends TestCase
 
         $contents = file_get_contents($this->workdir . '/preload.php');
 
-        $files = '$files = [' . \PHP_EOL .
-            "    'bar'," . \PHP_EOL .
-            "    'quz'," . \PHP_EOL .
-            "    'foo'," . \PHP_EOL .
-            "    'test_a'," . \PHP_EOL .
-            "    'test_b'" . \PHP_EOL .
+        $files = '$files = [' . PHP_EOL .
+            "    'bar'," . PHP_EOL .
+            "    'quz'," . PHP_EOL .
+            "    'foo'," . PHP_EOL .
+            "    'test_a'," . PHP_EOL .
+            "    'test_b'" . PHP_EOL .
             '];';
 
         $this->assertStringContainsString($files, $contents);
@@ -652,10 +654,10 @@ class PreloaderTest extends TestCase
 
         $contents = file_get_contents($this->workdir . '/preload.php');
 
-        $files = '$files = [' . \PHP_EOL .
-            "    'bar'," . \PHP_EOL .
-            "    'foo'," . \PHP_EOL .
-            "    'qux'" . \PHP_EOL .
+        $files = '$files = [' . PHP_EOL .
+            "    'bar'," . PHP_EOL .
+            "    'foo'," . PHP_EOL .
+            "    'qux'" . PHP_EOL .
             '];';
 
         $this->assertStringContainsString($files, $contents);
@@ -714,10 +716,10 @@ class PreloaderTest extends TestCase
 
         $contents = file_get_contents($this->workdir . '/preload.php');
 
-        $files = '$files = [' . \PHP_EOL .
-            "    'bar'," . \PHP_EOL .
-            "    'foo'," . \PHP_EOL .
-            "    'qux'" . \PHP_EOL .
+        $files = '$files = [' . PHP_EOL .
+            "    'bar'," . PHP_EOL .
+            "    'foo'," . PHP_EOL .
+            "    'qux'" . PHP_EOL .
             '];';
 
         $this->assertStringContainsString($files, $contents);
@@ -780,19 +782,19 @@ class PreloaderTest extends TestCase
 
         $contents = file_get_contents($this->workdir . '/preload.php');
 
-        $files = '$files = [' . \PHP_EOL .
-            "    'bar'," . \PHP_EOL .
-            "    'foo'," . \PHP_EOL .
-            "    'qux'," . \PHP_EOL .
-            "    'baz'," . \PHP_EOL .
-            "    '" . realpath(__DIR__ . '/../src/Conditions.php') . "',". \PHP_EOL .
-            "    '" . realpath(__DIR__ . '/../src/GeneratesScript.php') . "',". \PHP_EOL .
-            "    '" . realpath(__DIR__ . '/../src/LimitsList.php') . "',". \PHP_EOL .
-            "    '" . realpath(__DIR__ . '/../src/ManagesFiles.php') . "',". \PHP_EOL .
-            "    '" . realpath(__DIR__ . '/../src/Opcache.php') . "',". \PHP_EOL .
-            "    '" . realpath(__DIR__ . '/../src/Preloader.php') . "',". \PHP_EOL .
-            "    '" . realpath(__DIR__ . '/../src/PreloaderCompiler.php') . "',". \PHP_EOL .
-            "    '" . realpath(__DIR__ . '/../src/PreloaderLister.php') . "'". \PHP_EOL .
+        $files = '$files = [' . PHP_EOL .
+            "    'bar'," . PHP_EOL .
+            "    'foo'," . PHP_EOL .
+            "    'qux'," . PHP_EOL .
+            "    'baz'," . PHP_EOL .
+            "    '" . realpath(__DIR__ . '/../src/Conditions.php') . "',". PHP_EOL .
+            "    '" . realpath(__DIR__ . '/../src/GeneratesScript.php') . "',". PHP_EOL .
+            "    '" . realpath(__DIR__ . '/../src/LimitsList.php') . "',". PHP_EOL .
+            "    '" . realpath(__DIR__ . '/../src/ManagesFiles.php') . "',". PHP_EOL .
+            "    '" . realpath(__DIR__ . '/../src/Opcache.php') . "',". PHP_EOL .
+            "    '" . realpath(__DIR__ . '/../src/Preloader.php') . "',". PHP_EOL .
+            "    '" . realpath(__DIR__ . '/../src/PreloaderCompiler.php') . "',". PHP_EOL .
+            "    '" . realpath(__DIR__ . '/../src/PreloaderLister.php') . "'". PHP_EOL .
             '];';
 
         $this->assertStringContainsString($files, $contents);
@@ -838,11 +840,11 @@ class PreloaderTest extends TestCase
 
         $contents = file_get_contents($this->workdir . '/preload.php');
 
-        $files = '$files = [' . \PHP_EOL .
-            "    'bar'," . \PHP_EOL .
-            "    'foo'," . \PHP_EOL .
-            "    'qux'," . \PHP_EOL .
-            "    'test_a'" . \PHP_EOL .
+        $files = '$files = [' . PHP_EOL .
+            "    'bar'," . PHP_EOL .
+            "    'foo'," . PHP_EOL .
+            "    'qux'," . PHP_EOL .
+            "    'test_a'" . PHP_EOL .
             '];';
 
         $this->assertStringContainsString($files, $contents);
@@ -905,7 +907,7 @@ class PreloaderTest extends TestCase
 
     public function testFailsWhenNoAutoloader()
     {
-        $this->expectException(\LogicException::class);
+        $this->expectException(LogicException::class);
         $this->expectErrorMessage('Cannot proceed without pointing where to output the script.');
 
         Preloader::make()
@@ -915,7 +917,7 @@ class PreloaderTest extends TestCase
 
     public function testFailsWhenNoAutoload()
     {
-        $this->expectException(\LogicException::class);
+        $this->expectException(LogicException::class);
         $this->expectErrorMessage('Cannot proceed without a Composer Autoload.');
 
         Preloader::make()
@@ -925,7 +927,7 @@ class PreloaderTest extends TestCase
 
     public function testFailsWhenAutoloadDoesntExists()
     {
-        $this->expectException(\LogicException::class);
+        $this->expectException(LogicException::class);
         $this->expectErrorMessage('Composer Autoload file doesn\'t exists.');
 
         Preloader::make()
@@ -936,7 +938,7 @@ class PreloaderTest extends TestCase
 
     public function testFailsWhenOpcacheDisabled()
     {
-        $this->expectException(\LogicException::class);
+        $this->expectException(LogicException::class);
         $this->expectExceptionMessage('Opcache is disabled. No preload script can be generated.');
         $opcache = $this->createMock(Opcache::class);
 
@@ -953,7 +955,7 @@ class PreloaderTest extends TestCase
 
     public function testFailsWhenOpcacheNoCachedScripts()
     {
-        $this->expectException(\LogicException::class);
+        $this->expectException(LogicException::class);
         $this->expectExceptionMessage('Opcache reports 0 cached scripts. No preload will be generated.');
         $opcache = $this->createMock(Opcache::class);
 
@@ -1005,6 +1007,73 @@ class PreloaderTest extends TestCase
                 ->list();
 
         $this->assertEquals(['bar', 'quz', 'foo'], $list);
+    }
+
+    public function testChangesUploadMechanismDefault()
+    {
+        $opcache = $this->createMock(Opcache::class);
+
+        $opcache->method('isEnabled')
+            ->willReturn(true);
+        $opcache->method('getNumberCachedScripts')
+            ->willReturn(count($this->list));
+        $opcache->method('getHits')
+            ->willReturn(1001);
+        $opcache->method('getStatus')
+            ->willReturn([
+                'memory_usage' => [
+                    'used_memory' => rand(1000, 999999),
+                    'free_memory' => rand(1000, 999999),
+                    'wasted_memory' => rand(1000, 999999),
+                ],
+                'opcache_statistics' => [
+                    'num_cached_scripts' => rand(1000, 999999),
+                    'opcache_hit_rate' => rand(1, 99)/100,
+                    'misses' => rand(1000, 999999),
+                ],
+            ]);
+        $opcache->method('getScripts')
+            ->willReturn($this->list);
+
+        $preloader = new Preloader(new PreloaderCompiler, new PreloaderLister($opcache), $opcache);
+
+        $preloader
+            ->autoload($autoload = $this->workdir . '/autoload.php')
+            ->output($this->workdir . '/preload.php')
+            ->generate();
+
+        $contents = file_get_contents($this->workdir . '/preload.php');
+
+        $this->assertStringContainsString('require_once $file;', $contents);
+        $this->assertStringNotContainsString('opcache_compile_file($file);', $contents);
+
+        $preloader = new Preloader(new PreloaderCompiler, new PreloaderLister($opcache), $opcache);
+
+        $preloader
+            ->autoload($autoload = $this->workdir . '/autoload.php')
+            ->output($this->workdir . '/preload.php')
+            ->overwrite()
+            ->useCompile()
+            ->generate();
+
+        $contents = file_get_contents($this->workdir . '/preload.php');
+
+        $this->assertStringNotContainsString('require_once $file;', $contents);
+        $this->assertStringContainsString('opcache_compile_file($file);', $contents);
+
+        $preloader = new Preloader(new PreloaderCompiler, new PreloaderLister($opcache), $opcache);
+
+        $preloader
+            ->autoload($autoload = $this->workdir . '/autoload.php')
+            ->output($this->workdir . '/preload.php')
+            ->overwrite()
+            ->useRequire()
+            ->generate();
+
+        $contents = file_get_contents($this->workdir . '/preload.php');
+
+        $this->assertStringContainsString('require_once $file;', $contents);
+        $this->assertStringNotContainsString('opcache_compile_file($file);', $contents);
     }
 
     protected function tearDown() : void

@@ -89,9 +89,9 @@ This is the best way to gather good statistics for a good preloading list if you
 Preloader::make()->whenHits(200000); // After a given number of hits.
 ```
 
-The list will be generated when the number of hits set are **above** the reported by Opcache.
+The list will be generated when the number of hits set are **above** the reported by Opcache. This will avoid generating the preload list until the application have done many runs.
 
-> Watch out! If you're using `overwrite()`, the script will be regenerated every time after the number of hits are reached!
+> Watch out! If you're using `overwrite()`, the script will be regenerated every time **after** the number of hits are reached!
 
 #### `whenOneIn()` (optional)
 
@@ -183,6 +183,16 @@ Preloader::make()->overwrite()->generate();
 ```
 
 > Watch out using this along conditions like `whenHits()` and `when()`. If the condition are true, the Preloader will overwrite the preload script... over and over and over again!
+
+### `shouldCompile()|shouldRequire()` (optional)
+
+By default, the Preloader will upload the file to Opcache using `require_once`. Since this _executes_ the file itself to resolve the links preemptively, some projects may have problems using this.
+
+You can change this using `shouldCompile()` to use the `opcache_compile_file()`. This will read the file, but not resolve the links, so the last files on the list may have dangling links (like Traits, Interfaces and other Classes) and some warnings when the file is read by Opcache.
+
+```php
+Preloader::make()->shouldCompile()->generate();
+```
 
 ### `generate()` (required)
 

@@ -118,6 +118,30 @@ class Preloader
     }
 
     /**
+     * Use `opcache_compile_file()` to preload each file on the list.
+     *
+     * @return $this
+     */
+    public function useCompile()
+    {
+        $this->compiler->useRequire = false;
+
+        return $this;
+    }
+
+    /**
+     * Use `require_once $file` to preload each file on the list.
+     *
+     * @return $this
+     */
+    public function useRequire()
+    {
+        $this->compiler->useRequire = true;
+
+        return $this;
+    }
+
+    /**
      * Generates a preload script of files.
      *
      * @return bool

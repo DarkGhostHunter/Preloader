@@ -42,7 +42,7 @@ foreach ($files as $file) {
             throw new \Exception($file . ' does not exist');
         }
 
-        require_once $file;
+        @mechanism;
     } catch (\Throwable $e) {
         echo 'Message: ' . $e->getMessage() . \PHP_EOL;
         echo 'File: ' . $file . \PHP_EOL;

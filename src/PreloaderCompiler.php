@@ -28,6 +28,13 @@ class PreloaderCompiler
     public array $opcacheConfig;
 
     /**
+     * Mechanism to upload each file into Opcache.
+     *
+     * @var bool
+     */
+    public bool $useRequire = true;
+
+    /**
      * The file list to include
      *
      * @var array
@@ -59,7 +66,8 @@ class PreloaderCompiler
             '@output' => $this->scriptRealPath(),
             '@generated_at' => date('Y-m-d H:i:s e'),
             '@autoload' => realpath($this->autoload),
-            '@list' => $this->parseList()
+            '@list' => $this->parseList(),
+            '@mechanism' => $this->useRequire ? 'require_once $file' : 'opcache_compile_file($file)'
         ]);
 
         return str_replace(array_keys($replacing), $replacing, $this->contents);
