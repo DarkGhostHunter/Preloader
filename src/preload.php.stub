@@ -38,10 +38,9 @@ $files = [@list];
 
 foreach ($files as $file) {
     try {
-        if (!@include_once($file) || !file_exists($file)) {
-            throw new \Exception($file . ' does not exist');
+        if (!(is_file($file) && is_readable($file))) {
+            throw new \Exception("{$file} does not exist or unreadable.");
         }
-
         @mechanism;
     } catch (\Throwable $e) {
         echo 'Message: ' . $e->getMessage() . \PHP_EOL;
