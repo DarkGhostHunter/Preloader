@@ -32,6 +32,12 @@
  * @see https://github.com/darkghosthunter/preloader
  */
 
+register_shutdown_function(function (): void {
+    $error = error_get_last();
+    echo 'Message: ' . $error['message'] . \PHP_EOL;
+    echo 'File: ' . $error['file'] . \PHP_EOL;
+});
+
 require_once '@autoload';
 
 $files = [@list];
