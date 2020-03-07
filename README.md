@@ -28,7 +28,6 @@ This package generates a [PHP 7.4 preloading](https://www.php.net/manual/en/opca
     + [`exclude()`](#exclude)
   * [Generation](#generation)
     + [`memoryLimit()`](#memorylimit)
-    + [`dontOverwrite()`](#dontoverwrite)
     + [`shouldRequire()`](#shouldrequire) 
   * [Compilation](#compilation)
     + [`writeTo()`](#writeto)
@@ -92,7 +91,7 @@ Don't worry, you can configure what and how compile the list.
 
 ## Configuration
 
-You can configure the Preloader to run when a condition is met, limit the file list, and where to output the compiled preload list.
+You can configure the Preloader to run when a condition is met, limit the file list, among what other things.
 
 ### Conditions
 
@@ -113,8 +112,12 @@ You can add a list of files to the compiled list. These will be appended to the 
 You can pass an array of files, which is good if you already have a list ready to add.
 
 ```php
+<?php
+
+use DarkGhostHunter\Preloader\Preloader;
+
 Preloader::make()->append([
-    __DIR__ . '/foo.php', 
+    __DIR__ . '/packages/*/**.php', 
     __DIR__ . '/bar.php'
 ]);
 ```
@@ -124,10 +127,16 @@ Preloader::make()->append([
 Alternatively, you can pass a Closure that will receive a Symfony Finder instance to further manipulate the list of files to add.
 
 ```php
+<?php
+
+use DarkGhostHunter\Preloader\Preloader;
 use Symfony\Component\Finder\Finder;
 
 Preloader::make()->append(function (Finder $find) {
-    $find->files()->in('/vendor/packages');
+    $find->files()->in([
+        __DIR__ . '/packages_*/',
+        __DIR__ . '/files/',
+    ])->name(['*.php', '*.twig']);
 });
 ```
 
@@ -137,11 +146,15 @@ Preloader::make()->append(function (Finder $find) {
 
 This method excludes a file or list of files from Opcache list of files, which later end up in the Preload list. Excluding these files will free up the memory of the compiled list, leaving space for others files to be included.
 
-You can pass an array of files, which is good if you already have a list ready to exclude.
+You can pass an array of paths, which is good if you already have a list ready to exclude.
  
 ```php
+<?php
+
+use DarkGhostHunter\Preloader\Preloader;
+
 Preloader::make()->exclude([
-    __DIR__ . '/foo.php', 
+    __DIR__ . '/packages/*/**.php', 
     __DIR__ . '/bar.php'
 ]);
 ```
@@ -149,10 +162,16 @@ Preloader::make()->exclude([
 Alternatively, you can pass a Closure that will receive a Symfony Finder instance to further manipulate the list of files to exclude.
 
 ```php
+<?php
+
+use DarkGhostHunter\Preloader\Preloader;
 use Symfony\Component\Finder\Finder;
 
 Preloader::make()->exclude(function (Finder $find) {
-    $find->files()->in('/vendor/packages');
+    $find->files()->in([
+        __DIR__ . '/packages_*/',
+        __DIR__ . '/files/',
+    ])->name(['*.php', '*.twig']);
 });
 ```
 
@@ -165,22 +184,16 @@ By default, Preloader defaults a memory limit of 32MB, which is enough for *most
 You can set your own memory limit in **MB**. 
 
 ```php
+<?php
+
+use DarkGhostHunter\Preloader\Preloader;
+
 Preloader::make()->memoryLimit(32);
 ```
 
 This takes into account the `memory_consumption` key of each script cached in Opcache, not the real file size.
 
 > This limit doesn't have any relation with Opcache memory limit. 
-
-#### `dontOverwrite()`
-
-By default, Preloader will overwrite any preload file existing in the output path. To avoid replacing the list with another one, you can use `dontOverwrite()`.
-
-```php
-Preloader::make()->dontOverwrite();
-```
-
-You can revert to the default behaviour using `overwrite()`. 
 
 #### `shouldRequire()`
 
@@ -189,10 +202,12 @@ By default, the Preloader will upload the file to Opcache using `opcache_compile
 You can change this using `shouldRequire()` to use the `require_once`, along the path the Composer Autoloader (usually at `vendor/autoload.php`).
 
 ```php
+<?php
+
+use DarkGhostHunter\Preloader\Preloader;
+
 Preloader::make()->shouldRequire(__DIR__ . '/../vendor/autoload.php');
 ```
-
-You can revert to the default behaviour using `shouldCompile()`. 
 
 > You may get some warnings when compiling a file with unresolved links. These are not critical, since these files usually are the least requested in your application.
 
@@ -203,14 +218,24 @@ You can revert to the default behaviour using `shouldCompile()`.
 This will automatically create a PHP-ready script to preload your application. It will return `true` on success, and `false` when the when the conditions are not met.
 
 ```php
+<?php
+
+use DarkGhostHunter\Preloader\Preloader;
+
 Preloader::make()->writeTo(__DIR__ . '/preloader.php');
 ```
+
+You can issue `false` as second parameter to not overwrite any existing file in the write path. If a file is found, no preload logic will be run. 
 
 #### `getFiles()`
 
 You can retrieve the raw list of files that should be included as an array using `getFiles()`.
 
 ```php
+<?php
+
+use DarkGhostHunter\Preloader\Preloader;
+
 Preloader::make()->getFiles();
 ```
 
@@ -247,4 +272,4 @@ If you discover any security related issues, please email darkghosthunter@gmail.
 
 ## License
 
-The MIT License (MIT). Please see [License File](LICENSE.md) for more information.
+The MIT License (MIT). Please see [License File](LICENSE) for more information.
