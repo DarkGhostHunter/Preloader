@@ -9,16 +9,16 @@ trait ManagesFiles
     /**
      * Appended file list.
      *
-     * @var array
+     * @var \Symfony\Component\Finder\Finder
      */
-    protected $appended;
+    protected Finder $appended;
 
     /**
      * Excluded file list.
      *
-     * @var array
+     * @var \Symfony\Component\Finder\Finder
      */
-    protected $excluded;
+    protected Finder $excluded;
 
     /**
      * If the package should be excluded from preload list.
@@ -30,7 +30,7 @@ trait ManagesFiles
     /**
      * Append a list of files to the preload list, outside the memory limit.
      *
-     * @param  string|array|\Closure  $files
+     * @param  string|array|\Closure|\Symfony\Component\Finder\Finder  $files
      * @return $this
      */
     public function append($files)
@@ -43,7 +43,7 @@ trait ManagesFiles
     /**
      * Append a list of files to the preload list, outside the memory limit.
      *
-     * @param  mixed  $files
+     * @param  string|array|\Closure|\Symfony\Component\Finder\Finder  $files
      * @return $this
      */
     public function include($files)
@@ -54,7 +54,7 @@ trait ManagesFiles
     /**
      * Exclude a list of files from the preload list generation.
      *
-     * @param  mixed  $files
+     * @param  string|array|\Closure|\Symfony\Component\Finder\Finder  $files
      * @return $this
      */
     public function exclude($files)
@@ -79,13 +79,36 @@ trait ManagesFiles
     /**
      * Instantiates the Symfony Finder to look for files.
      *
-     * @param  string|array  $files
+     * @param  string|array|\Closure|\Symfony\Component\Finder\Finder  $files
+     * @return \Symfony\Component\Finder\Finder
+     */
+    protected function findFiles($files) : Finder
+    {
+        if (is_callable($files)) {
+            $finder = $files(new Finder());
+        } elseif ($files instanceof Finder) {
+            $finder = $files;
+        } else {
+            $finder = (new Finder())->in($files);
+        }
+
+        return $finder->files();
+    }
+
+    /**
+     * Return an array of the files from the Finder.
+     *
+     * @param  \Symfony\Component\Finder\Finder  $finder
      * @return array
      */
-    protected function findFiles($files) : array
+    protected function getFilesFromFinder(Finder $finder) : array
     {
-        $finder = $files instanceof Finder ? $files : (new Finder())->in($files);
+        $paths = [];
 
-        return iterator_to_array($finder->files()->getIterator());
+        foreach ($finder as $file) {
+            $paths = $file->getRealPath();
+        }
+
+        return $paths;
     }
 }

@@ -141,7 +141,7 @@ Preloader::make()->append([
 
 > If the files you're adding are already in the compiled list, these will be removed from the included files to avoid effective duplicates.
 
-This packages includes [Symfony Finder](https://symfony.com/doc/current/components/finder.html), so as an alternative you can pass a new Finder instance along with the files you want to append.
+This packages includes [Symfony Finder](https://symfony.com/doc/current/components/finder.html), so as an alternative you can pass a closure that receives the Finder instance along with the files you want to append.
 
 ```php
 <?php
@@ -149,9 +149,9 @@ This packages includes [Symfony Finder](https://symfony.com/doc/current/componen
 use Symfony\Component\Finder\Finder;
 use DarkGhostHunter\Preloader\Preloader;
 
-Preloader::make()->append(
-    (new Finder())->files()->in('/package')->name(['*.php', '*.twig'])
-);
+Preloader::make()->append(function (Finder $find) {
+    $find->files()->in('/package')->name(['*.php', '*.twig']);
+});
 ```
 
 > The `exclude()` method take precedence over `append()`. If you exclude a file that is later appended, you won't exclude it at all.
@@ -173,7 +173,7 @@ Preloader::make()->exclude([
 ]);
 ```
 
-This packages includes [Symfony Finder](https://symfony.com/doc/current/components/finder.html), so as an alternative you can pass a new Finder instance along with the files you want to exclude.
+This packages includes [Symfony Finder](https://symfony.com/doc/current/components/finder.html), so as an alternative you can pass a Closure receiving the Finder instance along with the files you want to exclude.
 
 ```php
 <?php
@@ -181,9 +181,9 @@ This packages includes [Symfony Finder](https://symfony.com/doc/current/componen
 use Symfony\Component\Finder\Finder;
 use DarkGhostHunter\Preloader\Preloader;
 
-Preloader::make()->exclude(
-    (new Finder())->files()->in('/package')->name(['*.php', '*.twig'])
-);
+Preloader::make()->exclude(function (Finder $find) {
+    $find->files()->in('/package')->name(['*.php', '*.twig']);
+});
 ```
 
 > The `exclude()` method take precedence over `append()`. If you exclude a file that is later appended, you won't exclude it at all.
@@ -224,9 +224,9 @@ This takes into account the `memory_consumption` key of each script cached in Op
 
 #### `shouldRequire()`
 
-By default, the Preloader will upload the file to Opcache using `opcache_compile_file()`. This avoids executing any file in your project, but no links (traits, interfaces, extended classes, ...) will be resolved from the files compiled.
+By default, the Preloader will upload the file to Opcache using `opcache_compile_file()`. This avoids executing any file in your project, but no links (traits, interfaces, extended classes, ...) will be resolved from the files compiled, but you may have some warnings of unresolved links when preloading (nothing too dangerous).
 
-You can change this using `shouldRequire()` to use the `require_once`, along the path the Composer Autoloader (usually at `vendor/autoload.php`).
+You can change this using `shouldRequire()`, which changes to  `require_once`, along the path the Composer Autoloader (usually at `vendor/autoload.php`) to resolve the links.
 
 ```php
 <?php

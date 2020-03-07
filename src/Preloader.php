@@ -86,8 +86,8 @@ class Preloader
     {
         $this->lister->list = $this->opcache->getScripts();
         $this->lister->selfExclude = $this->selfExclude;
-        $this->lister->appended = $this->appended ? iterator_to_array($this->appended->getIterator()) : [];
-        $this->lister->excluded = $this->excluded ? iterator_to_array($this->excluded->getIterator()) : [];
+        $this->lister->appended = $this->appended ? $this->getFilesFromFinder($this->appended) : [];
+        $this->lister->excluded = $this->excluded ? $this->getFilesFromFinder($this->excluded) : [];
 
         return $this->lister;
     }
@@ -136,7 +136,7 @@ class Preloader
      */
     protected function canGenerate()
     {
-        if (! $this->useRequire && (!$this->autoloader || ! file_exists($this->autoloader))) {
+        if ($this->useRequire && ! file_exists($this->autoloader)) {
             throw new LogicException('Cannot proceed without a Composer Autoload.');
         }
 
