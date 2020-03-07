@@ -2,64 +2,71 @@
 
 namespace DarkGhostHunter\Preloader;
 
+use Symfony\Component\Finder\Finder;
+
 trait ManagesFiles
 {
     /**
-     * Include the Preloader files in the file list.
+     * Appended file list.
      *
-     * @param  bool $include
+     * @var \Symfony\Component\Finder\Finder
+     */
+    protected Finder $appended;
+
+    /**
+     * Excluded file list.
+     *
+     * @var \Symfony\Component\Finder\Finder
+     */
+    protected Finder $excluded;
+
+    /**
+     * Append a list of files to the preload list, outside the memory limit.
+     *
+     * @param  string|array|\Closure  $files
      * @return $this
      */
-    public function includePreloader(bool $include = true)
+    public function append($files)
     {
-        $this->lister->includePreloader = $include;
+        $this->appended = $this->findFiles($files);
 
         return $this;
     }
 
     /**
-     * Append a list of files to the preload list. These won't count for file and memory limits.
+     * Append a list of files to the preload list, outside the memory limit.
      *
-     * @param $files
+     * @param  string|array|callable  $files
      * @return $this
      */
-    public function append($files) : self
+    public function include($files)
     {
-        $this->lister->append = $this->listFiles((array)$files);
-
-        return $this;
+        return $this->append($files);
     }
 
     /**
      * Exclude a list of files from the preload list generation.
      *
-     * @param $files
+     * @param  string|array|callable  $files
      * @return $this
      */
-    public function exclude($files) : self
+    public function exclude($files)
     {
-        $this->lister->exclude = $this->listFiles((array)$files);
+        $this->excluded = $this->findFiles($files);
 
         return $this;
     }
 
     /**
-     * Take every file string and pass it to the glob function.
+     * Instantiates the Symfony Finder to look for files.
      *
-     * @param array $files
-     * @return array
+     * @param  string|array|callable  $files
+     * @return \Symfony\Component\Finder\Finder
      */
-    protected function listFiles(array $files) : array
+    protected function findFiles($files) : Finder
     {
-        $paths = [];
+        $finder = (new Finder())->files();
 
-        // We will cycle trough each "file" and save the resulting array given by glob.
-        // If the glob returns false, we will trust the developer goodwill and add it
-        // anyway, since the file may not yet exist until after the preload compile.
-        foreach ($files as $file) {
-            $paths[] = glob($file) ?: [$file];
-        }
-
-        return array_merge(...$paths);
+        return is_callable($files) ? $files($finder) : $finder->in($files);
     }
 }

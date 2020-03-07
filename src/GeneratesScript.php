@@ -5,13 +5,25 @@ namespace DarkGhostHunter\Preloader;
 trait GeneratesScript
 {
     /**
-     * Returns if we should overwrite the preload script file
+     * Memory limit (in MB).
      *
-     * @return bool
+     * @var float
      */
-    protected function shouldWrite()
+    protected $memory = self::MEMORY_LIMIT;
+
+    /**
+     * Memory limit (in MB) to constrain the file list.
+     *
+     * @param  int|float $limit
+     * @return $this
+     *
+     * @throws \RuntimeException
+     */
+    public function memory($limit)
     {
-        return $this->overwrite ?: ! file_exists($this->output);
+        $this->memory = (float)$limit;
+
+        return $this;
     }
 
     /**

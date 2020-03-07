@@ -7,24 +7,30 @@ use RuntimeException;
 
 class Preloader
 {
-    use Conditions;
-    use LimitsList;
+    use ConditionsScript;
     use ManagesFiles;
     use GeneratesScript;
 
     /**
      * Stub for the preload file script
      *
-     * @const
+     * @var string
      */
     protected const STUB_LOCATION = __DIR__ . '/preload.php.stub';
+
+    /**
+     * Default memory limit for the preload list.
+     *
+     * @var float
+     */
+    protected const MEMORY_LIMIT = 32.0;
 
     /**
      * Determines if the preload file should be rewritten.
      *
      * @var bool
      */
-    protected bool $overwrite = false;
+    protected bool $overwrite = true;
 
     /**
      * The preload list script location.
@@ -66,45 +72,6 @@ class Preloader
         $this->compiler = $compiler;
         $this->lister = $lister;
         $this->opcache = $opcache;
-    }
-
-    /**
-     * Determines if the preload file should be rewritten;
-     *
-     * @param  bool $overwrite
-     * @return $this
-     */
-    public function overwrite(bool $overwrite = true) : self
-    {
-        $this->overwrite = $overwrite;
-
-        return $this;
-    }
-
-    /**
-     * Sets the path of the Composer Autoload (usually, "vendor/autoload.php");
-     *
-     * @param  string $autoload
-     * @return $this
-     */
-    public function autoload(string $autoload) : self
-    {
-        $this->compiler->autoload = $autoload;
-
-        return $this;
-    }
-
-    /**
-     * Indicates the preload script output file.
-     *
-     * @param  string $path
-     * @return $this
-     */
-    public function output(string $path) : self
-    {
-        $this->output = $this->compiler->output = $path;
-
-        return $this;
     }
 
     /**

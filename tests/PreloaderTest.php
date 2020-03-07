@@ -690,7 +690,7 @@ class PreloaderTest extends TestCase
             ]);
 
         $package = array_flip([
-            realpath(__DIR__ . '/../src/Conditions.php'),
+            realpath(__DIR__ . '/../src/ConditionsScript.php'),
             realpath(__DIR__ . '/../src/GeneratesScript.php'),
             realpath(__DIR__ . '/../src/LimitsList.php'),
             realpath(__DIR__ . '/../src/ManagesFiles.php'),
@@ -730,7 +730,7 @@ class PreloaderTest extends TestCase
         $opcache = $this->createMock(Opcache::class);
 
         $package = array_flip([
-            realpath(__DIR__ . '/../src/Conditions.php'),
+            realpath(__DIR__ . '/../src/ConditionsScript.php'),
             realpath(__DIR__ . '/../src/GeneratesScript.php'),
             realpath(__DIR__ . '/../src/LimitsList.php'),
             realpath(__DIR__ . '/../src/ManagesFiles.php'),
@@ -787,7 +787,7 @@ class PreloaderTest extends TestCase
             "    'foo'," . PHP_EOL .
             "    'qux'," . PHP_EOL .
             "    'baz'," . PHP_EOL .
-            "    '" . realpath(__DIR__ . '/../src/Conditions.php') . "',". PHP_EOL .
+            "    '" . realpath(__DIR__ . '/../src/ConditionsScript.php') . "',". PHP_EOL .
             "    '" . realpath(__DIR__ . '/../src/GeneratesScript.php') . "',". PHP_EOL .
             "    '" . realpath(__DIR__ . '/../src/LimitsList.php') . "',". PHP_EOL .
             "    '" . realpath(__DIR__ . '/../src/ManagesFiles.php') . "',". PHP_EOL .
