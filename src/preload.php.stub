@@ -1,10 +1,12 @@
 <?php
 /**
- * This file is generated automatically by Preloader.
+ * Preloader Script 2.x
  *
- * This script uses Composer Autoload file and `require_once` to preload the files in this
- * list. Add this file to your `php.ini` in `opcache.preload` to preload this list into
- * PHP at startup. Additionally, this file also includes information about Opcache.
+ * This file is generated automatically by the Preloader package.
+ *
+ * The following script uses `@mechanism` syntax to preload each file in this list into Opcache.
+ * To full enable preload, add this file to your `php.ini` in `opcache.preload` key to preload
+ * this list of files PHP at startup. This file also includes some information about Opcache.
  *
  *
  * Add (or update) this line in `php.ini`:
@@ -32,7 +34,7 @@
  * @see https://github.com/darkghosthunter/preloader
  */
 
-require_once '@autoload';
+@autoload
 
 $files = [@list];
 

@@ -7,21 +7,21 @@ use const PHP_EOL;
 class PreloaderCompiler
 {
     /**
-     * Preloader stub contents
+     * Preloader stub contents.
      *
      * @var false|string
      */
     public string $contents;
 
     /**
-     * Configuration array
+     * Configuration array.
      *
      * @var array
      */
     public array $preloaderConfig;
 
     /**
-     * Opcache statistics array
+     * Opcache statistics array.
      *
      * @var array
      */
@@ -35,21 +35,21 @@ class PreloaderCompiler
     public bool $useRequire = true;
 
     /**
-     * The file list to include
+     * The file list to include.
      *
      * @var array
      */
     public array $list;
 
     /**
-     * The Composer Autoload location
+     * The Composer Autoload location.
      *
      * @var null|string
      */
     public ?string $autoload = null;
 
     /**
-     * PHP.ini preload list input
+     * PHP.ini preload list input.
      *
      * @var string
      */
@@ -63,18 +63,18 @@ class PreloaderCompiler
     public function compile() : string
     {
         $replacing = array_merge($this->preloaderConfig, $this->opcacheConfig, [
-            '@output' => $this->scriptRealPath(),
+            '@output'       => $this->scriptRealPath(),
             '@generated_at' => date('Y-m-d H:i:s e'),
-            '@autoload' => realpath($this->autoload),
-            '@list' => $this->parseList(),
-            '@mechanism' => $this->useRequire ? 'require_once $file' : 'opcache_compile_file($file)'
+            '@autoload'     => realpath($this->autoload),
+            '@list'         => $this->parseList(),
+            '@mechanism'    => $this->useRequire ? 'require_once $file' : 'opcache_compile_file($file)',
         ]);
 
         return str_replace(array_keys($replacing), $replacing, $this->contents);
     }
 
     /**
-     * Returns the output file real path
+     * Returns the output file real path.
      *
      * @return string
      */
@@ -88,7 +88,7 @@ class PreloaderCompiler
         // We will try to create a dummy file and just then get the real path of it.
         // After getting the real path, we will delete it and return the path. If
         // we can't, then we will just return the output path string as-it-is.
-        if(! touch($this->output)) {
+        if (! touch($this->output)) {
             return $this->output;
         }
         // @codeCoverageIgnoreEnd

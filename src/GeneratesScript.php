@@ -12,9 +12,23 @@ trait GeneratesScript
     protected $memory = self::MEMORY_LIMIT;
 
     /**
+     * If it should use `require_once` to preload files.
+     *
+     * @var bool
+     */
+    protected bool $useRequire = false;
+
+    /**
+     * Location of the Autoloader.
+     *
+     * @var string
+     */
+    protected ?string $autoloader = null;
+
+    /**
      * Memory limit (in MB) to constrain the file list.
      *
-     * @param  int|float $limit
+     * @param  int|float  $limit
      * @return $this
      *
      * @throws \RuntimeException
@@ -22,6 +36,19 @@ trait GeneratesScript
     public function memory($limit)
     {
         $this->memory = (float)$limit;
+
+        return $this;
+    }
+
+    /**
+     * Use `require_once $file` to preload each file on the list.
+     *
+     * @return $this
+     */
+    public function useRequire(string $autoloader)
+    {
+        $this->useRequire = true;
+        $this->autoload = $autoloader;
 
         return $this;
     }
@@ -36,15 +63,18 @@ trait GeneratesScript
         $opcache = $this->opcache->getStatus();
 
         return [
-            '@opcache_memory_used' =>
-                number_format($opcache['memory_usage']['used_memory'] / 1024**2, 1, '.', ''),
-            '@opcache_memory_free' =>
-                number_format($opcache['memory_usage']['free_memory'] / 1024**2, 1, '.', ''),
+            '@opcache_memory_used'   =>
+                number_format($opcache['memory_usage']['used_memory'] / 1024 ** 2, 1, '.', ''),
+            '@opcache_memory_free'   =>
+                number_format($opcache['memory_usage']['free_memory'] / 1024 ** 2, 1, '.', ''),
             '@opcache_memory_wasted' =>
-                number_format($opcache['memory_usage']['wasted_memory'] / 1024**2, 1, '.', ''),
-            '@opcache_files' => $opcache['opcache_statistics']['num_cached_scripts'],
-            '@opcache_hit_rate' => number_format($opcache['opcache_statistics']['opcache_hit_rate'], 2, '.', ''),
-            '@opcache_misses' => $opcache['opcache_statistics']['misses'],
+                number_format($opcache['memory_usage']['wasted_memory'] / 1024 ** 2, 1, '.', ''),
+            '@opcache_files'         =>
+                $opcache['opcache_statistics']['num_cached_scripts'],
+            '@opcache_hit_rate'      =>
+                number_format($opcache['opcache_statistics']['opcache_hit_rate'], 2, '.', ''),
+            '@opcache_misses'        =>
+                $opcache['opcache_statistics']['misses'],
         ];
     }
 
@@ -57,9 +87,9 @@ trait GeneratesScript
     {
         return [
             '@preloader_memory_limit' => $this->lister->memory,
-            '@preloader_overwrite' => $this->overwrite ? 'true' : 'false',
-            '@preloader_appended' => count($this->lister->append),
-            '@preloader_excluded' => count($this->lister->exclude),
+            '@preloader_overwrite'    => $this->overwrite ? 'true' : 'false',
+            '@preloader_appended'     => count($this->lister->append),
+            '@preloader_excluded'     => count($this->lister->exclude),
         ];
     }
 }

@@ -23,15 +23,16 @@ This package generates a [PHP 7.4 preloading](https://www.php.net/manual/en/opca
 - [Configuration](#configuration)
   * [Conditions](#conditions)
     + [`when()`](#when)
-  * [List](#list)
+  * [Listing](#listing)
     + [`append()`](#append)
     + [`exclude()`](#exclude)
+    + [`selfExclude()`](#selfexclude)
   * [Generation](#generation)
     + [`memoryLimit()`](#memorylimit)
-    + [`shouldRequire()`](#shouldrequire) 
+    + [`shouldRequire()`](#shouldrequire)
   * [Compilation](#compilation)
     + [`writeTo()`](#writeto)
-    + [`getFiles()`](#getfiles)
+    + [`getList()`](#getlist)
 - [Example](#example)
 - [Security](#security)
 - [License](#license)
@@ -81,9 +82,9 @@ Restart your PHP process that's using Opcache, and that's all, you're good.
 
 ## How it works
 
-This package asks Opcache for the most requested files and compiles a list from it. You can [check this article in Medium about that preload](https://medium.com/p/9ede756f292c/).
+This package asks Opcache only for the most requested files and compiles a list from it. You can [check this article in Medium about that preload](https://medium.com/p/9ede756f292c/).
 
-Since the best statistics are those you get **after** your application has been running for a while, you can use your own mechanisms (or the ones provided by the class) to compile the list only after certain conditions are met.
+Since the best statistics are those you get **after** your application has been running for a while, you can use your own mechanisms to compile the list only after certain conditions are met.
 
 ![](https://miro.medium.com/max/1365/1*Zp-rR9-dPNn55L8GjSUpJg.png)
 
@@ -100,16 +101,32 @@ You can configure the Preloader to run when a condition is met, limit the file l
 This method executes the given callable and checks if the preloader should compile the list or not based on what the callable returning value evaluates.
 
 ```php
+<?php
+
+use DarkGhostHunter\Preloader\Preloader;
+
 Preloader::make()->when(fn () => $app->cache()->get('should_run'));
 ```
 
-### List
+#### `whenOneIn()`
+
+This is method is just a helper to allows you to quickly make generate a Preloader list in one of a given number of random chances.
+
+```php
+<?php
+
+use DarkGhostHunter\Preloader\Preloader;
+
+Preloader::make()->whenOneIn(50);
+```
+
+For example, the above makes the Preloader generate a compiled list one in one hundred chances.
+
+### Listing
 
 #### `append()`
 
-You can add a list of files to the compiled list. These will be appended to the compiled list, and won't account for memory restrictions. 
-
-You can pass an array of files, which is good if you already have a list ready to add.
+You can add a list of directories to the compiled list. These will be appended to the compiled list, and won't account for memory restrictions. 
 
 ```php
 <?php
@@ -117,27 +134,24 @@ You can pass an array of files, which is good if you already have a list ready t
 use DarkGhostHunter\Preloader\Preloader;
 
 Preloader::make()->append([
-    __DIR__ . '/packages/*/**.php', 
-    __DIR__ . '/bar.php'
+    __DIR__ . '/files/', 
+    __DIR__ . '/classes/'
 ]);
 ```
 
 > If the files you're adding are already in the compiled list, these will be removed from the included files to avoid effective duplicates.
 
-Alternatively, you can pass a Closure that will receive a Symfony Finder instance to further manipulate the list of files to add.
+This packages includes [Symfony Finder](https://symfony.com/doc/current/components/finder.html), so as an alternative you can pass a new Finder instance along with the files you want to append.
 
 ```php
 <?php
 
-use DarkGhostHunter\Preloader\Preloader;
 use Symfony\Component\Finder\Finder;
+use DarkGhostHunter\Preloader\Preloader;
 
-Preloader::make()->append(function (Finder $find) {
-    $find->files()->in([
-        __DIR__ . '/packages_*/',
-        __DIR__ . '/files/',
-    ])->name(['*.php', '*.twig']);
-});
+Preloader::make()->append(
+    (new Finder())->files()->in('/package')->name(['*.php', '*.twig'])
+);
 ```
 
 > The `exclude()` method take precedence over `append()`. If you exclude a file that is later appended, you won't exclude it at all.
@@ -154,25 +168,38 @@ You can pass an array of paths, which is good if you already have a list ready t
 use DarkGhostHunter\Preloader\Preloader;
 
 Preloader::make()->exclude([
-    __DIR__ . '/packages/*/**.php', 
-    __DIR__ . '/bar.php'
+    __DIR__ . '/packages', 
+    __DIR__ . '/vendor'
 ]);
 ```
 
-Alternatively, you can pass a Closure that will receive a Symfony Finder instance to further manipulate the list of files to exclude.
+This packages includes [Symfony Finder](https://symfony.com/doc/current/components/finder.html), so as an alternative you can pass a new Finder instance along with the files you want to exclude.
+
+```php
+<?php
+
+use Symfony\Component\Finder\Finder;
+use DarkGhostHunter\Preloader\Preloader;
+
+Preloader::make()->exclude(
+    (new Finder())->files()->in('/package')->name(['*.php', '*.twig'])
+);
+```
+
+> The `exclude()` method take precedence over `append()`. If you exclude a file that is later appended, you won't exclude it at all.
+
+#### `selfExclude()`
+
+Automatically excludes the Package files from the Preload list.
+
+By default, the package is not excluded, since it may be heavily requested on Opcache. It's recommended to exclude the package only if you have total confidence it won't be called once Opcache Preloading is enabled.
 
 ```php
 <?php
 
 use DarkGhostHunter\Preloader\Preloader;
-use Symfony\Component\Finder\Finder;
 
-Preloader::make()->exclude(function (Finder $find) {
-    $find->files()->in([
-        __DIR__ . '/packages_*/',
-        __DIR__ . '/files/',
-    ])->name(['*.php', '*.twig']);
-});
+Preloader::make()->selfExclude();
 ```
 
 ### Generation
@@ -227,16 +254,16 @@ Preloader::make()->writeTo(__DIR__ . '/preloader.php');
 
 You can issue `false` as second parameter to not overwrite any existing file in the write path. If a file is found, no preload logic will be run. 
 
-#### `getFiles()`
+#### `getList()`
 
-You can retrieve the raw list of files that should be included as an array using `getFiles()`.
+You can retrieve the raw list of files that should be included as an array using `getList()`.
 
 ```php
 <?php
 
 use DarkGhostHunter\Preloader\Preloader;
 
-Preloader::make()->getFiles();
+Preloader::make()->getList();
 ```
 
 This may become handy if you have your own script, or you just want to tinker around it.

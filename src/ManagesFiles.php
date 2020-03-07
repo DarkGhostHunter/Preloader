@@ -9,16 +9,23 @@ trait ManagesFiles
     /**
      * Appended file list.
      *
-     * @var \Symfony\Component\Finder\Finder
+     * @var array
      */
-    protected Finder $appended;
+    protected $appended;
 
     /**
      * Excluded file list.
      *
-     * @var \Symfony\Component\Finder\Finder
+     * @var array
      */
-    protected Finder $excluded;
+    protected $excluded;
+
+    /**
+     * If the package should be excluded from preload list.
+     *
+     * @var bool
+     */
+    protected bool $selfExclude = false;
 
     /**
      * Append a list of files to the preload list, outside the memory limit.
@@ -36,7 +43,7 @@ trait ManagesFiles
     /**
      * Append a list of files to the preload list, outside the memory limit.
      *
-     * @param  string|array|callable  $files
+     * @param  mixed  $files
      * @return $this
      */
     public function include($files)
@@ -47,7 +54,7 @@ trait ManagesFiles
     /**
      * Exclude a list of files from the preload list generation.
      *
-     * @param  string|array|callable  $files
+     * @param  mixed  $files
      * @return $this
      */
     public function exclude($files)
@@ -58,15 +65,27 @@ trait ManagesFiles
     }
 
     /**
+     * Excludes the package files from the preload list.
+     *
+     * @return $this
+     */
+    public function selfExclude()
+    {
+        $this->selfExclude = true;
+
+        return $this;
+    }
+
+    /**
      * Instantiates the Symfony Finder to look for files.
      *
-     * @param  string|array|callable  $files
-     * @return \Symfony\Component\Finder\Finder
+     * @param  string|array  $files
+     * @return array
      */
-    protected function findFiles($files) : Finder
+    protected function findFiles($files) : array
     {
-        $finder = (new Finder())->files();
+        $finder = $files instanceof Finder ? $files : (new Finder())->in($files);
 
-        return is_callable($files) ? $files($finder) : $finder->in($files);
+        return iterator_to_array($finder->files()->getIterator());
     }
 }

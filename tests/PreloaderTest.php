@@ -57,6 +57,15 @@ class PreloaderTest extends TestCase
 
             rmdir($dir);
         }
+
+        foreach (['test_a', 'test_b'] as $dir) {
+            if (is_dir($path = $this->workdir . '/' . $dir)) {
+                foreach (glob( $path . '/*', GLOB_MARK ) as $file) {
+                    unlink($file);
+                }
+                rmdir($dir);
+            }
+        }
     }
 
     protected function setUp() : void
@@ -469,12 +478,19 @@ class PreloaderTest extends TestCase
 
         $preloader = new Preloader(new PreloaderCompiler, new PreloaderLister($opcache), $opcache);
 
+        mkdir($this->workdir . '/test_a');
+        mkdir($this->workdir . '/test_b');
+        touch($this->workdir . '/test_a/foo.php');
+        touch($this->workdir . '/test_a/bar.php');
+        touch($this->workdir . '/test_b/foo.php');
+        touch($this->workdir . '/test_b/bar.php');
+
         $preloader
             ->autoload($autoload = $this->workdir . '/autoload.php')
             ->memory(10)
             ->append([
-                'test_a',
-                'test_b'
+                $this->workdir . '/test_b/*.php',
+                $this->workdir . '/test_a/foo.php',
             ])
             ->output($this->workdir . '/preload.php');
 
