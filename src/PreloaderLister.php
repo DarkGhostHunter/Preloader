@@ -2,62 +2,54 @@
 
 namespace DarkGhostHunter\Preloader;
 
+use const DIRECTORY_SEPARATOR;
+
 class PreloaderLister
 {
     /**
-     * Memory Limit (in MB) to constrain the file list
-     *
-     * @var int
-     */
-    public int $memory = 32;
-
-    /**
-     * List of files to append to the preload list
+     * List of opcache file list.
      *
      * @var array
      */
-    public array $append = [];
+    public array $list;
 
     /**
-     * List of files to exclude from the preload list generation
+     * Memory limit for the list.
      *
-     * @var array
+     * @var float
      */
-    public array $exclude = [];
+    public float $memory = Preloader::MEMORY_LIMIT;
 
     /**
-     * If the Preloader package should also be included.
+     * Exclude the package files.
      *
      * @var bool
      */
-    public bool $includePreloader = false;
+    public bool $selfExclude = false;
 
     /**
-     * Opcache class access
+     * List of appended files.
      *
-     * @var \DarkGhostHunter\Preloader\Opcache
+     * @var array
      */
-    protected Opcache $opcache;
+    public array $appended = [];
 
     /**
-     * ListBuilder constructor.
+     * List of excluded files.
      *
-     * @param  \DarkGhostHunter\Preloader\Opcache $opcache
+     * @var array
      */
-    public function __construct(Opcache $opcache)
-    {
-        $this->opcache = $opcache;
-    }
+    public array $excluded = [];
 
     /**
-     * Builds a list of scripts
+     * Builds a list of scripts.
      *
      * @return array
      */
     public function build() : array
     {
         // Exclude the files set by the developer
-        $scripts = $this->exclude($this->opcache->getScripts());
+        $scripts = $this->exclude($this->list);
 
         // Sort the scripts by hit ratio
         $scripts = $this->sortScripts($scripts);
@@ -66,14 +58,14 @@ class PreloaderLister
         $scripts = $this->cutByMemoryLimit($scripts);
 
         // Add files to the preload.
-        $scripts = array_merge($scripts, $this->append);
+        $scripts = array_merge($scripts, $this->appended);
 
         // Remove duplicates and return
         return array_unique($scripts);
     }
 
     /**
-     * Retrieve a sorted scripts list used by Opcache
+     * Retrieve a sorted scripts list used by Opcache.
      *
      * @param  array $scripts
      * @return array
@@ -91,7 +83,7 @@ class PreloaderLister
     }
 
     /**
-     * Cuts the files by their cumulative memory consumption
+     * Cuts the files by their cumulative memory consumption.
      *
      * @param $files
      * @return array
@@ -122,15 +114,16 @@ class PreloaderLister
 
         return $resulting;
     }
+
     /**
      * Exclude files from the list
      *
-     * @param  array $scripts
+     * @param  array  $scripts
      * @return array
      */
     protected function exclude(array $scripts)
     {
-        return array_diff_key($scripts, array_flip(array_merge($this->exclude, $this->excludedPackageFiles())));
+        return array_diff_key($scripts, array_flip(array_merge($this->excluded, $this->excludedPackageFiles())));
     }
 
     /**
@@ -140,8 +133,10 @@ class PreloaderLister
      */
     protected function excludedPackageFiles()
     {
-        return $this->includePreloader
-            ? []
-            : array_map(fn ($entry) => realpath($entry), glob(realpath(__DIR__ . '/') . '/*.php'));
+        if ($this->selfExclude) {
+            return array_map(fn ($entry) => realpath($entry), glob(realpath(__DIR__) . DIRECTORY_SEPARATOR . '*.php'));
+        }
+
+        return [];
     }
 }
