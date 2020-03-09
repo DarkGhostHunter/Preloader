@@ -45,7 +45,7 @@ foreach ($files as $file) {
         }
         @mechanism;
     } catch (\Throwable $e) {
-        echo 'Preloader Script has stopped with an error:' . \PHP_EOL
+        echo 'Preloader Script has stopped with an error:' . \PHP_EOL;
         echo 'Message: ' . $e->getMessage() . \PHP_EOL;
         echo 'File: ' . $file . \PHP_EOL;
 

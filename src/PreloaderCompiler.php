@@ -65,9 +65,11 @@ class PreloaderCompiler
         $replacing = array_merge($this->preloaderConfig, $this->opcacheConfig, [
             '@output'       => $this->scriptRealPath(),
             '@generated_at' => date('Y-m-d H:i:s e'),
-            '@autoload'     => isset($this->autoload) ? realpath($this->autoloader) : null,
+            '@autoload'     => isset($this->autoloader)
+                ? 'require_once ' . realpath($this->autoloader) : null,
             '@list'         => $this->parseList(),
-            '@mechanism'    => $this->useRequire ? 'require_once $file' : 'opcache_compile_file($file)',
+            '@mechanism'    => $this->useRequire
+                ? 'require_once $file' : 'opcache_compile_file($file)',
         ]);
 
         return str_replace(array_keys($replacing), $replacing, $this->contents);

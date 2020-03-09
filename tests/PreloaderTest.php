@@ -534,6 +534,9 @@ class PreloaderTest extends TestCase
 
         $contents = file_get_contents($this->preloaderPath);
 
+        $this->assertStringContainsString('require_once ' . implode(DIRECTORY_SEPARATOR, [
+            $this->workdir, 'autoload.php'
+        ]), $contents);
         $this->assertStringContainsString('require_once ', $contents);
     }
 

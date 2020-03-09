@@ -46,7 +46,7 @@ trait GeneratesScript
      * @param  string  $autoloader
      * @return $this
      */
-    public function useRequire(string $autoloader)  : self
+    public function useRequire(string $autoloader) : self
     {
         $this->useRequire = true;
         $this->autoloader = $autoloader;

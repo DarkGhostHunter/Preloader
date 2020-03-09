@@ -168,6 +168,7 @@ class Preloader
     protected function prepareCompiler(string $path)
     {
         $this->compiler->list = $this->getList();
+        $this->compiler->autoloader = $this->autoloader;
         $this->compiler->contents = file_get_contents(static::STUB_LOCATION);
         $this->compiler->opcacheConfig = $this->getOpcacheConfig();
         $this->compiler->preloaderConfig = $this->getPreloaderConfig();
