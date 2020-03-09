@@ -33,6 +33,7 @@ This package generates a [PHP 7.4 preloading](https://www.php.net/manual/en/opca
   * [Compilation](#compilation)
     + [`writeTo()`](#writeto)
     + [`getList()`](#getlist)
+- [Safe Preloader](#safe-preloader)
 - [Example](#example)
 - [Security](#security)
 - [License](#license)
@@ -271,6 +272,38 @@ Preloader::make()->getList();
 ```
 
 This may become handy if you have your own script, or you just want to tinker around it.
+
+## Safe Preloader
+
+This packages comes with a handy Safe Preloader, located in `helpers/safe_preloader.php`.
+
+What it does is very simple: it registers a shutdown function for PHP that is executed after the preload script finishes, and registers any error the script may have returned so you can debug it.
+
+To use it, copy the file into an accessible path for PHP, and along with the real preloader script, reference it in your `php.ini`:
+
+```ini
+opcache.preload=/www/app/safe_preloader.php
+```
+
+```php
+<?php
+// /www/app/safe_preloader.php
+
+register_shutdown_function(function (): void {
+    $error = error_get_last();
+    if (!$error) {
+        return;
+    }
+    echo 'Preloader Script has stopped with an error:' . \PHP_EOL;
+    echo 'Message: ' . $error['message'] . \PHP_EOL;
+    echo 'File: ' . $error['file'] . \PHP_EOL;
+});
+
+// require_once /* Path to your preload script */
+require_once '/www/app/preloader.php';
+```
+
+Technically speaking, the Opcache preloads the files in a different process, so there shouldn't be a problem using this safe-preloader. 
 
 ## Example
 
