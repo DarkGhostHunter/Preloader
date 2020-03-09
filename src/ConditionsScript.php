@@ -17,7 +17,7 @@ trait ConditionsScript
      * @param  callable  $condition
      * @return $this
      */
-    public function when(callable $condition)
+    public function when(callable $condition) : self
     {
         $this->condition = $condition;
 
@@ -30,7 +30,7 @@ trait ConditionsScript
      * @param  int  $chances
      * @return $this
      */
-    public function whenOneIn(int $chances)
+    public function whenOneIn(int $chances) : self
     {
         return $this->when(function () use ($chances) {
             return random_int(1, $chances) === (int)ceil($chances/2);

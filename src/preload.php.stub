@@ -24,7 +24,7 @@
  *     - Hit rate: @opcache_hit_rate%
  *     - Misses: @opcache_misses
  * Preloader config
- *     - Memory limit: @preloader_memory_limit MB
+ *     - Memory limit: @preloader_memory_limit
  *     - Overwrite: @preloader_overwrite
  *     - Files excluded: @preloader_excluded
  *     - Files appended: @preloader_appended
@@ -41,12 +41,15 @@ $files = [@list];
 foreach ($files as $file) {
     try {
         if (!(is_file($file) && is_readable($file))) {
-            throw new \Exception("{$file} does not exist or unreadable.");
+            throw new \Exception("{$file} does not exist or is unreadable.");
         }
         @mechanism;
     } catch (\Throwable $e) {
+        echo 'Preloader Script has stopped with an error:' . \PHP_EOL
         echo 'Message: ' . $e->getMessage() . \PHP_EOL;
         echo 'File: ' . $file . \PHP_EOL;
+
+        throw $e;
     }
 }
 

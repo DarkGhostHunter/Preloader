@@ -3,113 +3,45 @@
 namespace Tests;
 
 use LogicException;
+use PHPUnit\Framework\TestCase;
+use Symfony\Component\Finder\Finder;
 use DarkGhostHunter\Preloader\Opcache;
 use DarkGhostHunter\Preloader\Preloader;
-use PHPUnit\Framework\TestCase;
 use DarkGhostHunter\Preloader\PreloaderLister;
 use DarkGhostHunter\Preloader\PreloaderCompiler;
-use const PHP_EOL;
+use const DIRECTORY_SEPARATOR;
 
 class PreloaderTest extends TestCase
 {
-    protected string $workdir;
+    use PrepareWorkDir;
 
-    protected array $list = [
-        'foo' => [ // 3
-            'hits' => 10,
-            'memory_consumption' => 1 * (1024 ** 2),
-            'last_used_timestamp' => 1400000000
-        ],
-        'bar' => [ // 1
-            'hits' => 20,
-            'memory_consumption' => 3 * (1024 ** 2),
-            'last_used_timestamp' => 1400000002
-        ],
-        'quz' => [ // 2
-            'hits' => 20,
-            'memory_consumption' => 5 * (1024 ** 2),
-            'last_used_timestamp' => 1400000001
-        ],
-        'qux' => [ // 4
-            'hits' => 5,
-            'memory_consumption' => 5 * (1024 ** 2),
-            'last_used_timestamp' => 1400000010
-        ],
-        'baz' => [ // 5
-            'hits' => 5,
-            'memory_consumption' => 6 * (1024 ** 2),
-            'last_used_timestamp' => 1400000010
-        ]
-    ];
+    /** @var \DarkGhostHunter\Preloader\Opcache|\PHPUnit\Framework\MockObject\MockObject  */
+    protected $opcache;
 
-    protected function clearWorkdir()
-    {
-        if (is_file($file = $this->workdir . '/preload.php')) {
-            unlink($file);
-        }
-
-        if (is_dir($dir = $this->workdir . '/examples')) {
-            $files = glob( $dir . '/*', GLOB_MARK );
-
-            foreach ($files as $file) {
-                unlink($file);
-            }
-
-            rmdir($dir);
-        }
-
-        foreach (['test_a', 'test_b'] as $dir) {
-            if (is_dir($path = $this->workdir . '/' . $dir)) {
-                foreach (glob( $path . '/*', GLOB_MARK ) as $file) {
-                    unlink($file);
-                }
-                rmdir($dir);
-            }
-        }
-    }
+    protected $preloaderPath;
 
     protected function setUp() : void
     {
         parent::setUp();
 
-        $this->workdir = realpath(__DIR__ . '/workdir');
+        $this->opcache = $this->createMock(Opcache::class);
 
-        if (is_file($file = $this->workdir . '/preload.php')) {
-            unlink($file);
-        }
+        $this->setWorkdir();
+        $this->clearWorkDir();
+        $this->prepareWorkdir();
 
-        if (is_dir($dir = $this->workdir . '/examples')) {
-            foreach (glob( $dir . '/*') as $file) {
-                unlink($file);
-            }
-
-            rmdir($dir);
-        }
+        $this->preloaderPath = $this->workdir . DIRECTORY_SEPARATOR . 'preloader.php';
     }
 
-    public function testCreatesInstance()
+    public function test_when_condition_receives_callable_and_resolves_on_generation()
     {
-        $preloader = Preloader::make();
-
-        $this->assertInstanceOf(Preloader::class, $preloader);
-
-        $fromStatic = Preloader::make()->output($this->workdir . '/preload.php')
-            ->autoload($this->workdir . '/autoload.php');
-
-        $this->assertInstanceOf(Preloader::class, $fromStatic);
-    }
-
-    public function testGeneratesScript()
-    {
-        $opcache = $this->createMock(Opcache::class);
-
-        $opcache->method('isEnabled')
+        $this->opcache->method('isEnabled')
             ->willReturn(true);
-        $opcache->method('getNumberCachedScripts')
+        $this->opcache->method('getNumberCachedScripts')
             ->willReturn(1000);
-        $opcache->method('getHits')
+        $this->opcache->method('getHits')
             ->willReturn(1001);
-        $opcache->method('getStatus')
+        $this->opcache->method('getStatus')
             ->willReturn([
                 'memory_usage' => [
                     'used_memory' => $usedMemory = rand(1000, 999999),
@@ -122,974 +54,603 @@ class PreloaderTest extends TestCase
                     'misses' => $misses = rand(1000, 999999),
                 ],
             ]);
-        $opcache->method('getScripts')
+        $this->opcache->method('getScripts')
             ->willReturn($this->list);
 
-        $preloader = new Preloader(new PreloaderCompiler, new PreloaderLister($opcache), $opcache);
+        $preloader = new Preloader(new PreloaderCompiler, new PreloaderLister, $this->opcache);
 
-        $preloader
-            ->autoload($autoload = $this->workdir . '/autoload.php')
-            ->output($output = $this->workdir . '/preload.php');
+        $resolved = false;
 
-        $this->assertTrue($preloader->generate());
-        $this->assertFileExists($this->workdir . '/preload.php');
+        $preloader->when(function () use (&$resolved) {
+            return $resolved = true;
+        });
 
-        $contents = file_get_contents($this->workdir . '/preload.php');
+        $this->assertFalse($resolved);
 
-        $files = '$files = [' . PHP_EOL .
-            "    'bar'," . PHP_EOL .
-            "    'quz'," . PHP_EOL .
-            "    'foo'," . PHP_EOL .
-            "    'qux'," . PHP_EOL .
-            "    'baz'" . PHP_EOL .
-            '];';
+        $this->assertTrue($preloader->writeTo($this->preloaderPath));
 
-        $this->assertStringContainsString($files, $contents);
-        $this->assertStringContainsString('opcache.preload=' . realpath($output), $contents);
-
-        $this->assertRegExp('/([0-9]+)-(0{0,1}[1-9]|10|11|12)-([0-2]{0,1}[1-9]|10|20|30|31)\s([01]{0,1}[0-9]|2[0-3]):([0-5]{0,1}[0-9]):([0-5]{0,1}[0-9])/', $contents);
-
-        $this->assertStringContainsString('Used Memory: '
-            . number_format($usedMemory/1024**2, 1, '.' ,''), $contents);
-        $this->assertStringContainsString('Free Memory: '
-            . number_format($freeMemory/1024**2, 1, '.' ,''), $contents);
-        $this->assertStringContainsString('Wasted Memory: '
-            . number_format($wastedMemory/1024**2, 1, '.' ,''), $contents);
-        $this->assertStringContainsString('Cached files: ' . $cachedScripts, $contents);
-        $this->assertStringContainsString('Hit rate: ' . number_format($hitRate, '2', '.', ',') . '%', $contents);
-
-        $this->assertStringContainsString('Misses: ' . $misses, $contents);
-        $this->assertStringContainsString('Memory limit: 32 MB', $contents);
-        $this->assertStringContainsString('Overwrite: false', $contents);
-        $this->assertStringContainsString('Files excluded: 0', $contents);
-        $this->assertStringContainsString('Files appended: 0', $contents);
-
-        $this->assertStringContainsString("require_once '". realpath($autoload) . "';", $contents);
+        $this->assertTrue($resolved);
     }
 
-    public function testNoMemoryLimit()
+    public function test_when_one_in_condition_receives_callable_and_resolves_on_generation()
     {
-        $opcache = $this->createMock(Opcache::class);
-
-        $list = [
-            'foo' => [ // 3
-                'hits' => 10,
-                'memory_consumption' => 14 * (1024 ^ 2),
-                'last_used_timestamp' => 1400000000
-            ],
-            'bar' => [ // 1
-                'hits' => 20,
-                'memory_consumption' => 13 * (1024 ^ 2),
-                'last_used_timestamp' => 1400000002
-            ],
-            'quz' => [ // 2
-                'hits' => 20,
-                'memory_consumption' => 12 * (1024 ^ 2),
-                'last_used_timestamp' => 1400000001
-            ],
-            'qux' => [ // 4
-                'hits' => 5,
-                'memory_consumption' => 11 * (1024 ^ 2),
-                'last_used_timestamp' => 1400000010
-            ],
-            'baz' => [ // 5
-                'hits' => 5,
-                'memory_consumption' => 10 * (1024 ^ 2),
-                'last_used_timestamp' => 1400000010
-            ]
-        ];
-
-        $opcache->method('isEnabled')
+        $this->opcache->method('isEnabled')
             ->willReturn(true);
-        $opcache->method('getNumberCachedScripts')
-            ->willReturn(count($list));
-        $opcache->method('getHits')
-            ->willReturn(1001);
-        $opcache->method('getStatus')
-            ->willReturn([
-                'memory_usage' => [
-                    'used_memory' => rand(1000, 999999),
-                    'free_memory' => rand(1000, 999999),
-                    'wasted_memory' => rand(1000, 999999),
-                ],
-                'opcache_statistics' => [
-                    'num_cached_scripts' => rand(1000, 999999),
-                    'opcache_hit_rate' => rand(1, 99)/100,
-                    'misses' => rand(1000, 999999),
-                ],
-            ]);
-        $opcache->method('getScripts')
-            ->willReturn($list);
-
-        $preloader = new Preloader(new PreloaderCompiler, new PreloaderLister($opcache), $opcache);
-
-        $preloader
-            ->autoload($autoload = $this->workdir . '/autoload.php')
-            ->memory(0)
-            ->output($this->workdir . '/preload.php');
-
-        $this->assertTrue($preloader->generate());
-        $this->assertFileExists($this->workdir . '/preload.php');
-
-        $contents = file_get_contents($this->workdir . '/preload.php');
-
-        $files = '$files = [' . PHP_EOL .
-            "    'bar'," . PHP_EOL .
-            "    'quz'," . PHP_EOL .
-            "    'foo'," . PHP_EOL .
-            "    'baz'," . PHP_EOL .
-            "    'qux'" . PHP_EOL .
-            '];';
-
-        $this->assertStringContainsString($files, $contents);
-        $this->assertStringContainsString('Memory limit: 0 MB', $contents);
-    }
-
-    public function testMemoryLimit()
-    {
-        $opcache = $this->createMock(Opcache::class);
-
-        $opcache->method('isEnabled')
-            ->willReturn(true);
-        $opcache->method('getNumberCachedScripts')
-            ->willReturn(count($this->list));
-        $opcache->method('getHits')
-            ->willReturn(1001);
-        $opcache->method('getStatus')
-            ->willReturn([
-                'memory_usage' => [
-                    'used_memory' => rand(1000, 999999),
-                    'free_memory' => rand(1000, 999999),
-                    'wasted_memory' => rand(1000, 999999),
-                ],
-                'opcache_statistics' => [
-                    'num_cached_scripts' => rand(1000, 999999),
-                    'opcache_hit_rate' => rand(1, 99)/100,
-                    'misses' => rand(1000, 999999),
-                ],
-            ]);
-        $opcache->method('getScripts')
-            ->willReturn($this->list);
-
-        $preloader = new Preloader(new PreloaderCompiler, new PreloaderLister($opcache), $opcache);
-
-        $preloader
-            ->autoload($autoload = $this->workdir . '/autoload.php')
-            ->memory(10)
-            ->output($this->workdir . '/preload.php');
-
-        $this->assertTrue($preloader->generate());
-        $this->assertFileExists($this->workdir . '/preload.php');
-
-        $contents = file_get_contents($this->workdir . '/preload.php');
-
-        $files = '$files = [' . PHP_EOL .
-            "    'bar'," . PHP_EOL .
-            "    'quz'," . PHP_EOL .
-            "    'foo'" . PHP_EOL .
-            '];';
-
-        $this->assertStringContainsString($files, $contents);
-        $this->assertStringContainsString('Memory limit: 10 MB', $contents);
-    }
-
-    public function testWhenHits()
-    {
-        $opcache = $this->createMock(Opcache::class);
-
-        $opcache->method('isEnabled')
-            ->willReturn(true);
-        $opcache->method('getNumberCachedScripts')
+        $this->opcache->method('getNumberCachedScripts')
             ->willReturn(1000);
-        $opcache->method('getHits')
+        $this->opcache->method('getHits')
             ->willReturn(1001);
-        $opcache->method('getStatus')
+        $this->opcache->method('getStatus')
             ->willReturn([
                 'memory_usage' => [
-                    'used_memory' => rand(1000, 999999),
-                    'free_memory' => rand(1000, 999999),
-                    'wasted_memory' => rand(1000, 999999),
+                    'used_memory' => $usedMemory = rand(1000, 999999),
+                    'free_memory' => $freeMemory = rand(1000, 999999),
+                    'wasted_memory' => $wastedMemory = rand(1000, 999999),
                 ],
                 'opcache_statistics' => [
-                    'num_cached_scripts' => rand(1000, 999999),
-                    'opcache_hit_rate' => rand(1, 99)/100,
-                    'misses' => rand(1000, 999999),
+                    'num_cached_scripts' => $cachedScripts = rand(1000, 999999),
+                    'opcache_hit_rate' => $hitRate = rand(100, 9999)/100,
+                    'misses' => $misses = rand(1000, 999999),
                 ],
             ]);
-        $opcache->method('getScripts')
+        $this->opcache->method('getScripts')
             ->willReturn($this->list);
 
-        $preloader = new Preloader(new PreloaderCompiler, new PreloaderLister($opcache), $opcache);
+        $preloader = new Preloader(new PreloaderCompiler, new PreloaderLister, $this->opcache);
 
-        $this->assertFalse(
-            $preloader->whenHits(1000)
-                ->autoload($this->workdir . '/autoload.php')
-                ->output($this->workdir . '/preload.php')
-                ->generate()
-        );
-
-        $this->assertFalse(
-            $preloader->whenHits(1001)
-                ->autoload($this->workdir . '/autoload.php')
-                ->output($this->workdir . '/preload.php')
-                ->generate()
-        );
-
-        $this->assertTrue(
-            $preloader->whenHits(1002)
-                ->autoload($this->workdir . '/autoload.php')
-                ->output($this->workdir . '/preload.php')
-                ->generate()
-        );
-
-        $this->assertFalse(
-            $preloader->whenHits(1002)
-                ->autoload($this->workdir . '/autoload.php')
-                ->output($this->workdir . '/preload.php')
-                ->generate()
-        );
-    }
-
-    public function testWhenOneIn()
-    {
-        $opcache = $this->createMock(Opcache::class);
-
-        $opcache->method('isEnabled')
-            ->willReturn(true);
-        $opcache->method('getNumberCachedScripts')
-            ->willReturn(1000);
-        $opcache->method('getHits')
-            ->willReturn(1001);
-        $opcache->method('getStatus')
-            ->willReturn([
-                'memory_usage' => [
-                    'used_memory' => rand(1000, 999999),
-                    'free_memory' => rand(1000, 999999),
-                    'wasted_memory' => rand(1000, 999999),
-                ],
-                'opcache_statistics' => [
-                    'num_cached_scripts' => rand(1000, 999999),
-                    'opcache_hit_rate' => rand(1, 99)/100,
-                    'misses' => rand(1000, 999999),
-                ],
-            ]);
-        $opcache->method('getScripts')
-            ->willReturn($this->list);
-
-        $preloader = new Preloader(new PreloaderCompiler, new PreloaderLister($opcache), $opcache);
+        $preloader->whenOneIn(10);
 
         do {
-            $result = $preloader
-                ->autoload($this->workdir . '/autoload.php')
-                ->output($this->workdir. '/preload.php')
-                ->whenOneIn(10)
-                ->generate();
-        } while (! $result && !(bool) $this->assertFalse($result));
+            $write = $preloader->writeTo($this->preloaderPath);
+            if (!$write) {
+                $this->assertFalse($write);
+            }
+        } while (!$write);
 
-        $this->assertTrue($result);
+        $this->assertTrue($write);
     }
 
-    public function testWhen()
+    public function test_append_files_as_array()
     {
-        $opcache = $this->createMock(Opcache::class);
-
-        $opcache->method('isEnabled')
+        $this->opcache->method('isEnabled')
             ->willReturn(true);
-        $opcache->method('getNumberCachedScripts')
+        $this->opcache->method('getNumberCachedScripts')
             ->willReturn(1000);
-        $opcache->method('getHits')
+        $this->opcache->method('getHits')
             ->willReturn(1001);
-        $opcache->method('getStatus')
+        $this->opcache->method('getStatus')
             ->willReturn([
                 'memory_usage' => [
-                    'used_memory' => rand(1000, 999999),
-                    'free_memory' => rand(1000, 999999),
-                    'wasted_memory' => rand(1000, 999999),
+                    'used_memory' => $usedMemory = rand(1000, 999999),
+                    'free_memory' => $freeMemory = rand(1000, 999999),
+                    'wasted_memory' => $wastedMemory = rand(1000, 999999),
                 ],
                 'opcache_statistics' => [
-                    'num_cached_scripts' => rand(1000, 999999),
-                    'opcache_hit_rate' => rand(1, 99)/100,
-                    'misses' => rand(1000, 999999),
+                    'num_cached_scripts' => $cachedScripts = rand(1000, 999999),
+                    'opcache_hit_rate' => $hitRate = rand(100, 9999)/100,
+                    'misses' => $misses = rand(1000, 999999),
                 ],
             ]);
-        $opcache->method('getScripts')
+        $this->opcache->method('getScripts')
             ->willReturn($this->list);
 
-        $preloader = new Preloader(new PreloaderCompiler, new PreloaderLister($opcache), $opcache);
+        $preloader = new Preloader(new PreloaderCompiler, new PreloaderLister, $this->opcache);
 
-        $this->assertFalse(
-            $preloader
-                ->autoload($this->workdir . '/autoload.php')
-                ->output($this->workdir. '/preload.php')
-                ->when(fn () => false)
-                ->generate()
-        );
-
-        $this->assertFalse(
-            $preloader
-                ->autoload($this->workdir . '/autoload.php')
-                ->output($this->workdir. '/preload.php')
-                ->when(fn () => null)
-                ->generate()
-        );
-
-        $this->assertFalse(
-            $preloader
-                ->autoload($this->workdir . '/autoload.php')
-                ->output($this->workdir. '/preload.php')
-                ->when(function() { })
-                ->generate()
-        );
-
-        $this->assertTrue(
-            $preloader
-                ->autoload($this->workdir . '/autoload.php')
-                ->output($this->workdir. '/preload.php')
-                ->when(fn () => true)
-                ->generate()
-        );
-    }
-
-    public function testAppendsFilesWithoutAffectingLimits()
-    {
-        $opcache = $this->createMock(Opcache::class);
-
-        $opcache->method('isEnabled')
-            ->willReturn(true);
-        $opcache->method('getNumberCachedScripts')
-            ->willReturn(count($this->list));
-        $opcache->method('getHits')
-            ->willReturn(1001);
-        $opcache->method('getStatus')
-            ->willReturn([
-                'memory_usage' => [
-                    'used_memory' => rand(1000, 999999),
-                    'free_memory' => rand(1000, 999999),
-                    'wasted_memory' => rand(1000, 999999),
-                ],
-                'opcache_statistics' => [
-                    'num_cached_scripts' => rand(1000, 999999),
-                    'opcache_hit_rate' => rand(1, 99)/100,
-                    'misses' => rand(1000, 999999),
-                ],
-            ]);
-        $opcache->method('getScripts')
-            ->willReturn($this->list);
-
-        $preloader = new Preloader(new PreloaderCompiler, new PreloaderLister($opcache), $opcache);
-
-        mkdir($this->workdir . '/test_a');
-        mkdir($this->workdir . '/test_b');
-        touch($this->workdir . '/test_a/foo.php');
-        touch($this->workdir . '/test_a/bar.php');
-        touch($this->workdir . '/test_b/foo.php');
-        touch($this->workdir . '/test_b/bar.php');
-
-        $preloader
-            ->autoload($autoload = $this->workdir . '/autoload.php')
-            ->memory(10)
-            ->append([
-                $this->workdir . '/test_b/*.php',
-                $this->workdir . '/test_a/foo.php',
-            ])
-            ->output($this->workdir . '/preload.php');
-
-        $this->assertTrue($preloader->generate());
-        $this->assertFileExists($this->workdir . '/preload.php');
-
-        $contents = file_get_contents($this->workdir . '/preload.php');
-
-        $files = '$files = [' . PHP_EOL .
-            "    'bar'," . PHP_EOL .
-            "    'quz'," . PHP_EOL .
-            "    'foo'," . PHP_EOL .
-            "    'test_a'," . PHP_EOL .
-            "    'test_b'" . PHP_EOL .
-            '];';
-
-        $this->assertStringContainsString($files, $contents);
-        $this->assertStringContainsString('Memory limit: 10 MB', $contents);
-        $this->assertStringContainsString('Files appended: 2', $contents);
-    }
-
-    public function testExcludesUsingGlobFormat()
-    {
-        $opcache = $this->createMock(Opcache::class);
-
-        $opcache->method('isEnabled')
-            ->willReturn(true);
-        $opcache->method('getNumberCachedScripts')
-            ->willReturn(count($this->list));
-        $opcache->method('getHits')
-            ->willReturn(1001);
-        $opcache->method('getStatus')
-            ->willReturn([
-                'memory_usage' => [
-                    'used_memory' => rand(1000, 999999),
-                    'free_memory' => rand(1000, 999999),
-                    'wasted_memory' => rand(1000, 999999),
-                ],
-                'opcache_statistics' => [
-                    'num_cached_scripts' => rand(1000, 999999),
-                    'opcache_hit_rate' => rand(1, 99)/100,
-                    'misses' => rand(1000, 999999),
-                ],
-            ]);
-        $opcache->method('getScripts')
-            ->willReturn(array_merge($this->list, [
-                $this->workdir . '/examples/foo.php' => [
-                    'hits' => 10,
-                    'memory_consumption' => 0,
-                    'last_used_timestamp' => 1400000000
-                ],
-                $this->workdir . '/examples/bar.php'=> [
-                    'hits' => 10,
-                    'memory_consumption' .
-                    '' => 0,
-                    'last_used_timestamp' => 1400000000
-                ],
-                $this->workdir . '/examples/qux.php'=> [
-                    'hits' => 10,
-                    'memory_consumption' => 0,
-                    'last_used_timestamp' => 1400000000
-                ],
-            ]));
-
-        $preloader = new Preloader(new PreloaderCompiler, new PreloaderLister($opcache), $opcache);
-
-        mkdir($this->workdir . '/examples');
-        touch($this->workdir . '/examples/foo.php');
-        touch($this->workdir . '/examples/bar.php');
-        touch($this->workdir . '/examples/qux.php');
-
-        $this->assertTrue(
-            $preloader
-                ->autoload($autoload = $this->workdir . '/autoload.php')
-                ->memory(10)
-                ->exclude($this->workdir . '/examples/*.php')
-                ->output($this->workdir . '/preload.php')
-                ->generate()
-        );
-
-        $contents = file_get_contents($this->workdir . '/preload.php');
-
-        $this->assertStringNotContainsString($this->workdir . '/examples/foo.php', $contents);
-        $this->assertStringNotContainsString($this->workdir . '/examples/bar.php', $contents);
-        $this->assertStringNotContainsString($this->workdir . '/examples/qux.php', $contents);
-    }
-
-    public function testAppendsUsingGlobFormat()
-    {
-        $opcache = $this->createMock(Opcache::class);
-
-        $opcache->method('isEnabled')
-            ->willReturn(true);
-        $opcache->method('getNumberCachedScripts')
-            ->willReturn(count($this->list));
-        $opcache->method('getHits')
-            ->willReturn(1001);
-        $opcache->method('getStatus')
-            ->willReturn([
-                'memory_usage' => [
-                    'used_memory' => rand(1000, 999999),
-                    'free_memory' => rand(1000, 999999),
-                    'wasted_memory' => rand(1000, 999999),
-                ],
-                'opcache_statistics' => [
-                    'num_cached_scripts' => rand(1000, 999999),
-                    'opcache_hit_rate' => rand(1, 99)/100,
-                    'misses' => rand(1000, 999999),
-                ],
-            ]);
-        $opcache->method('getScripts')
-            ->willReturn($this->list);
-
-        $preloader = new Preloader(new PreloaderCompiler, new PreloaderLister($opcache), $opcache);
-
-        mkdir($this->workdir . '/examples');
-        touch($this->workdir . '/examples/foo.php');
-        touch($this->workdir . '/examples/bar.php');
-        touch($this->workdir . '/examples/qux.php');
-        touch($this->workdir . '/examples/quz.md');
-
-        $this->assertTrue(
-            $preloader
-                ->autoload($autoload = $this->workdir . '/autoload.php')
-                ->memory(10)
-                ->append($this->workdir . '/examples/*.php')
-                ->output($this->workdir . '/preload.php')
-                ->generate()
-        );
-
-        $contents = file_get_contents($this->workdir . '/preload.php');
-
-        $this->assertStringContainsString($this->workdir . '/examples/foo.php', $contents);
-        $this->assertStringContainsString($this->workdir . '/examples/bar.php', $contents);
-        $this->assertStringContainsString($this->workdir . '/examples/qux.php', $contents);
-        $this->assertStringNotContainsString($this->workdir . '/examples/quz.md', $contents);
-    }
-
-    public function testExcludesFilesAffectingLimits()
-    {
-        $opcache = $this->createMock(Opcache::class);
-
-        $opcache->method('isEnabled')
-            ->willReturn(true);
-        $opcache->method('getNumberCachedScripts')
-            ->willReturn(count($this->list));
-        $opcache->method('getHits')
-            ->willReturn(1001);
-        $opcache->method('getStatus')
-            ->willReturn([
-                'memory_usage' => [
-                    'used_memory' => rand(1000, 999999),
-                    'free_memory' => rand(1000, 999999),
-                    'wasted_memory' => rand(1000, 999999),
-                ],
-                'opcache_statistics' => [
-                    'num_cached_scripts' => rand(1000, 999999),
-                    'opcache_hit_rate' => rand(1, 99)/100,
-                    'misses' => rand(1000, 999999),
-                ],
-            ]);
-        $opcache->method('getScripts')
-            ->willReturn($this->list);
-
-        $preloader = new Preloader(new PreloaderCompiler, new PreloaderLister($opcache), $opcache);
-
-        $preloader
-            ->autoload($autoload = $this->workdir . '/autoload.php')
-            ->memory(10)
-            ->exclude([
-                'quz',
-            ])
-            ->output($this->workdir . '/preload.php');
-
-        $this->assertTrue($preloader->generate());
-        $this->assertFileExists($this->workdir . '/preload.php');
-
-        $contents = file_get_contents($this->workdir . '/preload.php');
-
-        $files = '$files = [' . PHP_EOL .
-            "    'bar'," . PHP_EOL .
-            "    'foo'," . PHP_EOL .
-            "    'qux'" . PHP_EOL .
-            '];';
-
-        $this->assertStringContainsString($files, $contents);
-        $this->assertStringContainsString('Memory limit: 10 MB', $contents);
-        $this->assertStringContainsString('Files excluded: 1', $contents);
-    }
-
-    public function testExcludesPackageFiles()
-    {
-        $opcache = $this->createMock(Opcache::class);
-
-        $opcache->method('isEnabled')
-            ->willReturn(true);
-        $opcache->method('getNumberCachedScripts')
-            ->willReturn(count($this->list));
-        $opcache->method('getHits')
-            ->willReturn(1001);
-        $opcache->method('getStatus')
-            ->willReturn([
-                'memory_usage' => [
-                    'used_memory' => rand(1000, 999999),
-                    'free_memory' => rand(1000, 999999),
-                    'wasted_memory' => rand(1000, 999999),
-                ],
-                'opcache_statistics' => [
-                    'num_cached_scripts' => rand(1000, 999999),
-                    'opcache_hit_rate' => rand(1, 99)/100,
-                    'misses' => rand(1000, 999999),
-                ],
-            ]);
-
-        $package = array_flip([
-            realpath(__DIR__ . '/../src/ConditionsScript.php'),
-            realpath(__DIR__ . '/../src/GeneratesScript.php'),
-            realpath(__DIR__ . '/../src/LimitsList.php'),
-            realpath(__DIR__ . '/../src/ManagesFiles.php'),
-            realpath(__DIR__ . '/../src/Opcache.php'),
-            realpath(__DIR__ . '/../src/Preloader.php'),
-            realpath(__DIR__ . '/../src/PreloaderCompiler.php'),
-            realpath(__DIR__ . '/../src/PreloaderLister.php'),
+        $preloader->append([
+            implode(DIRECTORY_SEPARATOR, [$this->workdir, 'examples', 'test_a']),
         ]);
 
-        $opcache->method('getScripts')
-            ->willReturn(array_merge($this->list, $package));
+        $this->assertTrue($preloader->writeTo($this->preloaderPath));
 
-        $preloader = new Preloader(new PreloaderCompiler, new PreloaderLister($opcache), $opcache);
+        $contents = file_get_contents($this->preloaderPath);
 
-        $preloader
-            ->autoload($autoload = $this->workdir . '/autoload.php')
-            ->memory(10)
-            ->exclude([
-                'quz',
-            ])
-            ->output($this->workdir . '/preload.php')
-            ->generate();
-
-        $contents = file_get_contents($this->workdir . '/preload.php');
-
-        $files = '$files = [' . PHP_EOL .
-            "    'bar'," . PHP_EOL .
-            "    'foo'," . PHP_EOL .
-            "    'qux'" . PHP_EOL .
-            '];';
-
-        $this->assertStringContainsString($files, $contents);
+        $this->assertStringContainsString(
+            implode(DIRECTORY_SEPARATOR, [$this->workdir, 'examples', 'test_a', 'foo.php']), $contents
+        );
+        $this->assertStringContainsString(
+            implode(DIRECTORY_SEPARATOR, [$this->workdir, 'examples', 'test_a', 'bar.php']), $contents
+        );
+        $this->assertStringContainsString(
+            implode(DIRECTORY_SEPARATOR, [$this->workdir, 'examples', 'test_a', 'quz.php']), $contents
+        );
+        $this->assertStringContainsString(
+            implode(DIRECTORY_SEPARATOR, [$this->workdir, 'examples', 'test_a', 'qux.php']), $contents
+        );
+        $this->assertStringContainsString(
+            implode(DIRECTORY_SEPARATOR, [$this->workdir, 'examples', 'test_a', 'baz.php']), $contents
+        );
     }
 
-    public function testIncludesPackageFiles()
+    public function test_append_files_as_callable()
     {
-        $opcache = $this->createMock(Opcache::class);
+        $this->opcache->method('isEnabled')
+            ->willReturn(true);
+        $this->opcache->method('getNumberCachedScripts')
+            ->willReturn(1000);
+        $this->opcache->method('getHits')
+            ->willReturn(1001);
+        $this->opcache->method('getStatus')
+            ->willReturn([
+                'memory_usage' => [
+                    'used_memory' => $usedMemory = rand(1000, 999999),
+                    'free_memory' => $freeMemory = rand(1000, 999999),
+                    'wasted_memory' => $wastedMemory = rand(1000, 999999),
+                ],
+                'opcache_statistics' => [
+                    'num_cached_scripts' => $cachedScripts = rand(1000, 999999),
+                    'opcache_hit_rate' => $hitRate = rand(100, 9999)/100,
+                    'misses' => $misses = rand(1000, 999999),
+                ],
+            ]);
+        $this->opcache->method('getScripts')
+            ->willReturn($this->list);
 
-        $package = array_flip([
-            realpath(__DIR__ . '/../src/ConditionsScript.php'),
-            realpath(__DIR__ . '/../src/GeneratesScript.php'),
-            realpath(__DIR__ . '/../src/LimitsList.php'),
-            realpath(__DIR__ . '/../src/ManagesFiles.php'),
-            realpath(__DIR__ . '/../src/Opcache.php'),
-            realpath(__DIR__ . '/../src/Preloader.php'),
-            realpath(__DIR__ . '/../src/PreloaderCompiler.php'),
-            realpath(__DIR__ . '/../src/PreloaderLister.php'),
+        $preloader = new Preloader(new PreloaderCompiler, new PreloaderLister, $this->opcache);
+
+        $preloader->append(function (Finder $find) {
+            return $find->in(implode(DIRECTORY_SEPARATOR, [$this->workdir, 'examples', 'test_b']));
+        });
+
+        $this->assertTrue($preloader->writeTo($this->preloaderPath));
+
+        $contents = file_get_contents($this->preloaderPath);
+
+        $this->assertStringContainsString(
+            implode(DIRECTORY_SEPARATOR, [$this->workdir, 'examples', 'test_b', 'foo.php']), $contents
+        );
+        $this->assertStringContainsString(
+            implode(DIRECTORY_SEPARATOR, [$this->workdir, 'examples', 'test_b', 'bar.php']), $contents
+        );
+        $this->assertStringContainsString(
+            implode(DIRECTORY_SEPARATOR, [$this->workdir, 'examples', 'test_b', 'quz.php']), $contents
+        );
+        $this->assertStringContainsString(
+            implode(DIRECTORY_SEPARATOR, [$this->workdir, 'examples', 'test_b', 'qux.php']), $contents
+        );
+        $this->assertStringContainsString(
+            implode(DIRECTORY_SEPARATOR, [$this->workdir, 'examples', 'test_b', 'baz.php']), $contents
+        );
+    }
+
+    public function test_exclude_files_as_array()
+    {
+        $this->opcache->method('isEnabled')
+            ->willReturn(true);
+        $this->opcache->method('getNumberCachedScripts')
+            ->willReturn(1000);
+        $this->opcache->method('getHits')
+            ->willReturn(1001);
+        $this->opcache->method('getStatus')
+            ->willReturn([
+                'memory_usage' => [
+                    'used_memory' => $usedMemory = rand(1000, 999999),
+                    'free_memory' => $freeMemory = rand(1000, 999999),
+                    'wasted_memory' => $wastedMemory = rand(1000, 999999),
+                ],
+                'opcache_statistics' => [
+                    'num_cached_scripts' => $cachedScripts = rand(1000, 999999),
+                    'opcache_hit_rate' => $hitRate = rand(100, 9999)/100,
+                    'misses' => $misses = rand(1000, 999999),
+                ],
+            ]);
+        $this->opcache->method('getScripts')
+            ->willReturn([
+                implode(DIRECTORY_SEPARATOR, [$this->workdir, 'examples', 'test_a', 'foo.php']) => [ // 3
+                    'hits' => 10,
+                    'memory_consumption' => 1 * (1024 ** 2),
+                    'last_used_timestamp' => 1400000000
+                ],
+                implode(DIRECTORY_SEPARATOR, [$this->workdir, 'examples', 'test_a', 'bar.php']) => [ // 1
+                    'hits' => 20,
+                    'memory_consumption' => 3 * (1024 ** 2),
+                    'last_used_timestamp' => 1400000002
+                ],
+                implode(DIRECTORY_SEPARATOR, [$this->workdir, 'examples', 'test_b', 'qux.php']) => [ // 1
+                    'hits' => 20,
+                    'memory_consumption' => 3 * (1024 ** 2),
+                    'last_used_timestamp' => 1400000002
+                ],
+            ]);
+
+        $preloader = new Preloader(new PreloaderCompiler, new PreloaderLister, $this->opcache);
+
+        $preloader->exclude([
+            implode(DIRECTORY_SEPARATOR, [$this->workdir, 'examples', 'test_b'])
         ]);
 
-        $opcache->method('isEnabled')
+        $this->assertTrue($preloader->writeTo($this->preloaderPath));
+
+        $contents = file_get_contents($this->preloaderPath);
+
+        $this->assertStringContainsString(
+            implode(DIRECTORY_SEPARATOR, [$this->workdir, 'examples', 'test_a', 'foo.php']), $contents
+        );
+
+        $this->assertStringContainsString(
+            implode(DIRECTORY_SEPARATOR, [$this->workdir, 'examples', 'test_a', 'bar.php']), $contents
+        );
+
+        $this->assertStringNotContainsString(
+            implode(DIRECTORY_SEPARATOR, [$this->workdir, 'examples', 'test_b', 'qux.php']), $contents
+        );
+    }
+
+    public function test_exclude_files_as_closure()
+    {
+        $this->opcache->method('isEnabled')
             ->willReturn(true);
-        $opcache->method('getNumberCachedScripts')
-            ->willReturn(count($this->list) + count($package));
-        $opcache->method('getHits')
+        $this->opcache->method('getNumberCachedScripts')
+            ->willReturn(1000);
+        $this->opcache->method('getHits')
             ->willReturn(1001);
-        $opcache->method('getStatus')
+        $this->opcache->method('getStatus')
             ->willReturn([
                 'memory_usage' => [
-                    'used_memory' => rand(1000, 999999),
-                    'free_memory' => rand(1000, 999999),
-                    'wasted_memory' => rand(1000, 999999),
+                    'used_memory' => $usedMemory = rand(1000, 999999),
+                    'free_memory' => $freeMemory = rand(1000, 999999),
+                    'wasted_memory' => $wastedMemory = rand(1000, 999999),
                 ],
                 'opcache_statistics' => [
-                    'num_cached_scripts' => rand(1000, 999999),
-                    'opcache_hit_rate' => rand(1, 99)/100,
-                    'misses' => rand(1000, 999999),
+                    'num_cached_scripts' => $cachedScripts = rand(1000, 999999),
+                    'opcache_hit_rate' => $hitRate = rand(100, 9999)/100,
+                    'misses' => $misses = rand(1000, 999999),
                 ],
             ]);
-
-        $opcache->method('getScripts')
-            ->willReturn(array_merge($this->list, array_map(function () {
-                return [
-                    'hits' => 1,
-                    'memory_consumption' => 1,
+        $this->opcache->method('getScripts')
+            ->willReturn([
+                implode(DIRECTORY_SEPARATOR, [$this->workdir, 'examples', 'test_a', 'foo.php']) => [ // 3
+                    'hits' => 10,
+                    'memory_consumption' => 1 * (1024 ** 2),
                     'last_used_timestamp' => 1400000000
-                ];
-            }, $package)));
-
-        $preloader = new Preloader(new PreloaderCompiler, new PreloaderLister($opcache), $opcache);
-
-        $preloader
-            ->autoload($autoload = $this->workdir . '/autoload.php')
-            ->exclude([
-                'quz',
-            ])
-            ->includePreloader()
-            ->output($this->workdir . '/preload.php')
-            ->generate();
-
-        $contents = file_get_contents($this->workdir . '/preload.php');
-
-        $files = '$files = [' . PHP_EOL .
-            "    'bar'," . PHP_EOL .
-            "    'foo'," . PHP_EOL .
-            "    'qux'," . PHP_EOL .
-            "    'baz'," . PHP_EOL .
-            "    '" . realpath(__DIR__ . '/../src/ConditionsScript.php') . "',". PHP_EOL .
-            "    '" . realpath(__DIR__ . '/../src/GeneratesScript.php') . "',". PHP_EOL .
-            "    '" . realpath(__DIR__ . '/../src/LimitsList.php') . "',". PHP_EOL .
-            "    '" . realpath(__DIR__ . '/../src/ManagesFiles.php') . "',". PHP_EOL .
-            "    '" . realpath(__DIR__ . '/../src/Opcache.php') . "',". PHP_EOL .
-            "    '" . realpath(__DIR__ . '/../src/Preloader.php') . "',". PHP_EOL .
-            "    '" . realpath(__DIR__ . '/../src/PreloaderCompiler.php') . "',". PHP_EOL .
-            "    '" . realpath(__DIR__ . '/../src/PreloaderLister.php') . "'". PHP_EOL .
-            '];';
-
-        $this->assertStringContainsString($files, $contents);
-    }
-
-    public function testExcludesAndAppends()
-    {
-        $opcache = $this->createMock(Opcache::class);
-
-        $opcache->method('isEnabled')
-            ->willReturn(true);
-        $opcache->method('getNumberCachedScripts')
-            ->willReturn(count($this->list));
-        $opcache->method('getHits')
-            ->willReturn(1001);
-        $opcache->method('getStatus')
-            ->willReturn([
-                'memory_usage' => [
-                    'used_memory' => rand(1000, 999999),
-                    'free_memory' => rand(1000, 999999),
-                    'wasted_memory' => rand(1000, 999999),
                 ],
-                'opcache_statistics' => [
-                    'num_cached_scripts' => rand(1000, 999999),
-                    'opcache_hit_rate' => rand(1, 99)/100,
-                    'misses' => rand(1000, 999999),
+                implode(DIRECTORY_SEPARATOR, [$this->workdir, 'examples', 'test_a', 'bar.php']) => [ // 1
+                    'hits' => 20,
+                    'memory_consumption' => 3 * (1024 ** 2),
+                    'last_used_timestamp' => 1400000002
+                ],
+                implode(DIRECTORY_SEPARATOR, [$this->workdir, 'examples', 'test_b', 'qux.php']) => [ // 1
+                    'hits' => 20,
+                    'memory_consumption' => 3 * (1024 ** 2),
+                    'last_used_timestamp' => 1400000002
                 ],
             ]);
-        $opcache->method('getScripts')
+
+        $preloader = new Preloader(new PreloaderCompiler, new PreloaderLister, $this->opcache);
+
+        $preloader->exclude(function (Finder $find) {
+            $find->in(implode(DIRECTORY_SEPARATOR, [$this->workdir, 'examples', 'test_b']));
+        });
+
+        $this->assertTrue($preloader->writeTo($this->preloaderPath));
+
+        $contents = file_get_contents($this->preloaderPath);
+
+        $this->assertStringContainsString(
+            implode(DIRECTORY_SEPARATOR, [$this->workdir, 'examples', 'test_a', 'foo.php']), $contents
+        );
+
+        $this->assertStringContainsString(
+            implode(DIRECTORY_SEPARATOR, [$this->workdir, 'examples', 'test_a', 'bar.php']), $contents
+        );
+
+        $this->assertStringNotContainsString(
+            implode(DIRECTORY_SEPARATOR, [$this->workdir, 'examples', 'test_b', 'qux.php']), $contents
+        );
+    }
+
+    public function test_self_excludes_from_list()
+    {
+        $this->opcache->method('isEnabled')
+            ->willReturn(true);
+        $this->opcache->method('getNumberCachedScripts')
+            ->willReturn(1000);
+        $this->opcache->method('getHits')
+            ->willReturn(1001);
+        $this->opcache->method('getStatus')
+            ->willReturn([
+                'memory_usage' => [
+                    'used_memory' => $usedMemory = rand(1000, 999999),
+                    'free_memory' => $freeMemory = rand(1000, 999999),
+                    'wasted_memory' => $wastedMemory = rand(1000, 999999),
+                ],
+                'opcache_statistics' => [
+                    'num_cached_scripts' => $cachedScripts = rand(1000, 999999),
+                    'opcache_hit_rate' => $hitRate = rand(100, 9999)/100,
+                    'misses' => $misses = rand(1000, 999999),
+                ],
+            ]);
+        $this->opcache->method('getScripts')
+            ->willReturn([
+                implode(DIRECTORY_SEPARATOR, [$this->workdir, 'examples', 'test_a', 'foo.php']) => [ // 3
+                    'hits' => 10,
+                    'memory_consumption' => 1 * (1024 ** 2),
+                    'last_used_timestamp' => 1400000000
+                ],
+                implode(DIRECTORY_SEPARATOR, [$this->workdir, 'examples', 'test_a', 'bar.php']) => [ // 1
+                    'hits' => 20,
+                    'memory_consumption' => 3 * (1024 ** 2),
+                    'last_used_timestamp' => 1400000002
+                ],
+                implode(DIRECTORY_SEPARATOR, [$this->workdir, 'examples', 'test_b', 'qux.php']) => [ // 1
+                    'hits' => 20,
+                    'memory_consumption' => 3 * (1024 ** 2),
+                    'last_used_timestamp' => 1400000002
+                ],
+                implode(DIRECTORY_SEPARATOR, [$this->workdir, 'examples', 'test_b', 'quz.php']) => [ // 1
+                    'hits' => 20,
+                    'memory_consumption' => 3 * (1024 ** 2),
+                    'last_used_timestamp' => 1400000002
+                ],
+                realpath(implode(DIRECTORY_SEPARATOR, [__DIR__, '..', 'src', 'Opcache.php'])) => [ // 1
+                    'hits' => 20,
+                    'memory_consumption' => 3 * (1024 ** 2),
+                    'last_used_timestamp' => 1400000002
+                ],
+                realpath(implode(DIRECTORY_SEPARATOR, [__DIR__, '..', 'src', 'Preloader.php'])) => [ // 1
+                    'hits' => 20,
+                    'memory_consumption' => 3 * (1024 ** 2),
+                    'last_used_timestamp' => 1400000002
+                ],
+            ]);
+
+        $preloader = new Preloader(new PreloaderCompiler, new PreloaderLister, $this->opcache);
+
+        $this->assertTrue($preloader->selfExclude()->writeTo($this->preloaderPath));
+
+        $contents = file_get_contents($this->preloaderPath);
+
+        $this->assertStringContainsString(
+            implode(DIRECTORY_SEPARATOR, [$this->workdir, 'examples', 'test_a', 'foo.php']), $contents
+        );
+
+        $this->assertStringContainsString(
+            implode(DIRECTORY_SEPARATOR, [$this->workdir, 'examples', 'test_a', 'bar.php']), $contents
+        );
+
+        $this->assertStringContainsString(
+            implode(DIRECTORY_SEPARATOR, [$this->workdir, 'examples', 'test_b', 'quz.php']), $contents
+        );
+
+        $this->assertStringContainsString(
+            implode(DIRECTORY_SEPARATOR, [$this->workdir, 'examples', 'test_b', 'qux.php']), $contents
+        );
+
+        $this->assertStringNotContainsString(
+            realpath(implode(DIRECTORY_SEPARATOR, [__DIR__, '..', 'src', 'Preloader.php'])),
+            $contents
+        );
+
+        $this->assertStringNotContainsString(
+            realpath(implode(DIRECTORY_SEPARATOR, [__DIR__, '..', 'src', 'Opcache.php'])),
+            $contents
+        );
+    }
+
+    public function test_limits_memory_list()
+    {
+        $this->opcache->method('isEnabled')
+            ->willReturn(true);
+        $this->opcache->method('getNumberCachedScripts')
+            ->willReturn(1000);
+        $this->opcache->method('getHits')
+            ->willReturn(1001);
+        $this->opcache->method('getStatus')
+            ->willReturn([
+                'memory_usage' => [
+                    'used_memory' => $usedMemory = rand(1000, 999999),
+                    'free_memory' => $freeMemory = rand(1000, 999999),
+                    'wasted_memory' => $wastedMemory = rand(1000, 999999),
+                ],
+                'opcache_statistics' => [
+                    'num_cached_scripts' => $cachedScripts = rand(1000, 999999),
+                    'opcache_hit_rate' => $hitRate = rand(100, 9999)/100,
+                    'misses' => $misses = rand(1000, 999999),
+                ],
+            ]);
+        $this->opcache->method('getScripts')
             ->willReturn($this->list);
 
-        $preloader = new Preloader(new PreloaderCompiler, new PreloaderLister($opcache), $opcache);
+        $preloader = new Preloader(new PreloaderCompiler, new PreloaderLister, $this->opcache);
 
-        $preloader
-            ->autoload($autoload = $this->workdir . '/autoload.php')
-            ->memory(10)
-            ->exclude('quz')
-            ->append('test_a')
-            ->output($this->workdir . '/preload.php');
+        $preloader->memoryLimit(10)->writeTo($this->preloaderPath);
 
-        $this->assertTrue($preloader->generate());
-        $this->assertFileExists($this->workdir . '/preload.php');
+        $contents = file_get_contents($this->preloaderPath);
 
-        $contents = file_get_contents($this->workdir . '/preload.php');
-
-        $files = '$files = [' . PHP_EOL .
-            "    'bar'," . PHP_EOL .
-            "    'foo'," . PHP_EOL .
-            "    'qux'," . PHP_EOL .
-            "    'test_a'" . PHP_EOL .
-            '];';
-
-        $this->assertStringContainsString($files, $contents);
         $this->assertStringContainsString('Memory limit: 10 MB', $contents);
-        $this->assertStringContainsString('Files excluded: 1', $contents);
-        $this->assertStringContainsString('Files appended: 1', $contents);
+        $this->assertStringContainsString('bar.php', $contents);
+        $this->assertStringContainsString('quz.php', $contents);
+        $this->assertStringContainsString('foo.php', $contents);
+        $this->assertStringNotContainsString('qux.php', $contents);
+        $this->assertStringNotContainsString('baz.php', $contents);
     }
 
-    public function testOverwritesPreloader()
+    public function test_memory_limit_disabled_lists_all_files()
     {
-        $opcache = $this->createMock(Opcache::class);
-
-        $opcache->method('isEnabled')
+        $this->opcache->method('isEnabled')
             ->willReturn(true);
-        $opcache->method('getNumberCachedScripts')
-            ->willReturn(count($this->list));
-        $opcache->method('getHits')
+        $this->opcache->method('getNumberCachedScripts')
+            ->willReturn(1000);
+        $this->opcache->method('getHits')
             ->willReturn(1001);
-        $opcache->method('getStatus')
+        $this->opcache->method('getStatus')
             ->willReturn([
                 'memory_usage' => [
-                    'used_memory' => rand(1000, 999999),
-                    'free_memory' => rand(1000, 999999),
-                    'wasted_memory' => rand(1000, 999999),
+                    'used_memory' => $usedMemory = rand(1000, 999999),
+                    'free_memory' => $freeMemory = rand(1000, 999999),
+                    'wasted_memory' => $wastedMemory = rand(1000, 999999),
                 ],
                 'opcache_statistics' => [
-                    'num_cached_scripts' => rand(1000, 999999),
-                    'opcache_hit_rate' => rand(1, 99)/100,
-                    'misses' => rand(1000, 999999),
+                    'num_cached_scripts' => $cachedScripts = rand(1000, 999999),
+                    'opcache_hit_rate' => $hitRate = rand(100, 9999)/100,
+                    'misses' => $misses = rand(1000, 999999),
                 ],
             ]);
-        $opcache->method('getScripts')
+        $this->opcache->method('getScripts')
             ->willReturn($this->list);
 
-        $preloader = new Preloader(new PreloaderCompiler, new PreloaderLister($opcache), $opcache);
+        $preloader = new Preloader(new PreloaderCompiler, new PreloaderLister, $this->opcache);
 
-        file_put_contents($this->workdir . '/preload.php', 'this_is_a_test');
+        $preloader->memoryLimit(0)->writeTo($this->preloaderPath);
 
-        $this->assertFalse(
-            $preloader
-                ->autoload($autoload = $this->workdir . '/autoload.php')
-                ->memory(10)
-                ->output($this->workdir . '/preload.php')
-                ->generate()
-        );
+        $contents = file_get_contents($this->preloaderPath);
 
-        $this->assertTrue(
-            $preloader
-                ->autoload($autoload = $this->workdir . '/autoload.php')
-                ->memory(10)
-                ->overwrite()
-                ->output($this->workdir . '/preload.php')
-                ->generate()
-        );
-
-        $contents = file_get_contents($this->workdir . '/preload.php');
-
-        $this->assertStringNotContainsString('this_is_a_test', $contents);
+        $this->assertStringContainsString('Memory limit: (disabled)', $contents);
+        $this->assertStringContainsString('bar.php', $contents);
+        $this->assertStringContainsString('quz.php', $contents);
+        $this->assertStringContainsString('foo.php', $contents);
+        $this->assertStringContainsString('qux.php', $contents);
+        $this->assertStringContainsString('baz.php', $contents);
     }
 
-    public function testFailsWhenNoAutoloader()
+    public function test_uses_require_instead_of_compile()
+    {
+        $this->opcache->method('isEnabled')
+            ->willReturn(true);
+        $this->opcache->method('getNumberCachedScripts')
+            ->willReturn(1000);
+        $this->opcache->method('getHits')
+            ->willReturn(1001);
+        $this->opcache->method('getStatus')
+            ->willReturn([
+                'memory_usage' => [
+                    'used_memory' => $usedMemory = rand(1000, 999999),
+                    'free_memory' => $freeMemory = rand(1000, 999999),
+                    'wasted_memory' => $wastedMemory = rand(1000, 999999),
+                ],
+                'opcache_statistics' => [
+                    'num_cached_scripts' => $cachedScripts = rand(1000, 999999),
+                    'opcache_hit_rate' => $hitRate = rand(100, 9999)/100,
+                    'misses' => $misses = rand(1000, 999999),
+                ],
+            ]);
+        $this->opcache->method('getScripts')
+            ->willReturn($this->list);
+
+        $preloader = new Preloader(new PreloaderCompiler, new PreloaderLister, $this->opcache);
+
+        $preloader->useRequire(
+            implode(DIRECTORY_SEPARATOR, [$this->workdir, 'autoload.php'])
+        )->writeTo($this->preloaderPath);
+
+        $contents = file_get_contents($this->preloaderPath);
+
+        $this->assertStringContainsString('require_once ', $contents);
+    }
+
+    public function test_exception_when_autoload_doesnt_exists()
     {
         $this->expectException(LogicException::class);
-        $this->expectErrorMessage('Cannot proceed without pointing where to output the script.');
+        $this->expectExceptionMessage('Cannot proceed without a Composer Autoload.');
 
-        Preloader::make()
-            ->autoload($this->workdir . '/autoload.php')
-            ->generate();
+        $this->opcache->method('isEnabled')
+            ->willReturn(true);
+        $this->opcache->method('getNumberCachedScripts')
+            ->willReturn(1000);
+        $this->opcache->method('getHits')
+            ->willReturn(1001);
+        $this->opcache->method('getStatus')
+            ->willReturn([
+                'memory_usage' => [
+                    'used_memory' => $usedMemory = rand(1000, 999999),
+                    'free_memory' => $freeMemory = rand(1000, 999999),
+                    'wasted_memory' => $wastedMemory = rand(1000, 999999),
+                ],
+                'opcache_statistics' => [
+                    'num_cached_scripts' => $cachedScripts = rand(1000, 999999),
+                    'opcache_hit_rate' => $hitRate = rand(100, 9999)/100,
+                    'misses' => $misses = rand(1000, 999999),
+                ],
+            ]);
+        $this->opcache->method('getScripts')
+            ->willReturn($this->list);
+
+        $preloader = new Preloader(new PreloaderCompiler, new PreloaderLister, $this->opcache);
+
+        $preloader->useRequire(
+            implode(DIRECTORY_SEPARATOR, [$this->workdir, 'doesntExists.php'])
+        )->writeTo($this->preloaderPath);
     }
 
-    public function testFailsWhenNoAutoload()
+    public function test_raw_list()
     {
-        $this->expectException(LogicException::class);
-        $this->expectErrorMessage('Cannot proceed without a Composer Autoload.');
+        $this->opcache->method('isEnabled')
+            ->willReturn(true);
+        $this->opcache->method('getNumberCachedScripts')
+            ->willReturn(1000);
+        $this->opcache->method('getHits')
+            ->willReturn(1001);
+        $this->opcache->method('getStatus')
+            ->willReturn([
+                'memory_usage' => [
+                    'used_memory' => $usedMemory = rand(1000, 999999),
+                    'free_memory' => $freeMemory = rand(1000, 999999),
+                    'wasted_memory' => $wastedMemory = rand(1000, 999999),
+                ],
+                'opcache_statistics' => [
+                    'num_cached_scripts' => $cachedScripts = rand(1000, 999999),
+                    'opcache_hit_rate' => $hitRate = rand(100, 9999)/100,
+                    'misses' => $misses = rand(1000, 999999),
+                ],
+            ]);
+        $this->opcache->method('getScripts')
+            ->willReturn($this->list);
 
-        Preloader::make()
-            ->output($this->workdir . '/preload.php')
-            ->generate();
+        $preloader = new Preloader(new PreloaderCompiler, new PreloaderLister, $this->opcache);
+
+        $list = $preloader->getList();
+
+        $this->assertIsArray($list);
+        $this->assertCount(5, $list);
     }
 
-    public function testFailsWhenAutoloadDoesntExists()
-    {
-        $this->expectException(LogicException::class);
-        $this->expectErrorMessage('Composer Autoload file doesn\'t exists.');
-
-        Preloader::make()
-            ->output($this->workdir . '/preload.php')
-            ->autoload($this->workdir . '/invalid_autoload.php')
-            ->generate();
-    }
-
-    public function testFailsWhenOpcacheDisabled()
+    public function test_exception_when_opcache_disabled()
     {
         $this->expectException(LogicException::class);
         $this->expectExceptionMessage('Opcache is disabled. No preload script can be generated.');
-        $opcache = $this->createMock(Opcache::class);
 
-        $opcache->method('isEnabled')
+        $this->opcache->method('isEnabled')
             ->willReturn(false);
 
-        $preloader = new Preloader(new PreloaderCompiler, new PreloaderLister($opcache), $opcache);
+        $preloader = new Preloader(new PreloaderCompiler, new PreloaderLister, $this->opcache);
 
-        $preloader
-            ->output($this->workdir . '/preload.php')
-            ->autoload($this->workdir . '/autoload.php')
-            ->generate();
+        $preloader->writeTo('lol');
     }
 
-    public function testFailsWhenOpcacheNoCachedScripts()
+    public function test_exception_when_no_scripts_cached()
     {
         $this->expectException(LogicException::class);
-        $this->expectExceptionMessage('Opcache reports 0 cached scripts. No preload will be generated.');
-        $opcache = $this->createMock(Opcache::class);
+        $this->expectExceptionMessage('Opcache reports 0 cached scripts. No preload can be generated.');
 
-        $opcache->method('isEnabled')
+        $this->opcache->method('isEnabled')
             ->willReturn(true);
-        $opcache->method('getNumberCachedScripts')
+        $this->opcache->method('getNumberCachedScripts')
             ->willReturn(0);
 
-        $preloader = new Preloader(new PreloaderCompiler, new PreloaderLister($opcache), $opcache);
+        $preloader = new Preloader(new PreloaderCompiler, new PreloaderLister, $this->opcache);
 
-        $preloader
-            ->output($this->workdir . '/preload.php')
-            ->autoload($this->workdir . '/autoload.php')
-            ->generate();
+        $preloader->writeTo('lol');
     }
 
-    public function testList()
+    public function test_exception_when_no_overwriting()
     {
-        $opcache = $this->createMock(Opcache::class);
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('Preloader script already exists in the given path.');
 
-        $opcache->method('isEnabled')
+        $this->opcache->method('isEnabled')
             ->willReturn(true);
-        $opcache->method('getNumberCachedScripts')
-            ->willReturn(count($this->list));
-        $opcache->method('getHits')
-            ->willReturn(1001);
-        $opcache->method('getStatus')
-            ->willReturn([
-                'memory_usage' => [
-                    'used_memory' => rand(1000, 999999),
-                    'free_memory' => rand(1000, 999999),
-                    'wasted_memory' => rand(1000, 999999),
-                ],
-                'opcache_statistics' => [
-                    'num_cached_scripts' => rand(1000, 999999),
-                    'opcache_hit_rate' => rand(1, 99)/100,
-                    'misses' => rand(1000, 999999),
-                ],
-            ]);
-        $opcache->method('getScripts')
-            ->willReturn($this->list);
+        $this->opcache->method('getNumberCachedScripts')
+            ->willReturn(1000);
 
-        $preloader = new Preloader(new PreloaderCompiler, new PreloaderLister($opcache), $opcache);
+        $preloader = new Preloader(new PreloaderCompiler, new PreloaderLister, $this->opcache);
 
-        $list = $preloader
-                ->autoload($autoload = $this->workdir . '/autoload.php')
-                ->memory(10)
-                ->output($this->workdir . '/preload.php')
-                ->list();
+        touch($this->preloaderPath);
 
-        $this->assertEquals(['bar', 'quz', 'foo'], $list);
+        $this->assertFalse($preloader->writeTo($this->preloaderPath, false));
     }
 
-    public function testChangesUploadMechanismDefault()
+    public function test_helper_creates_instance()
     {
-        $opcache = $this->createMock(Opcache::class);
-
-        $opcache->method('isEnabled')
-            ->willReturn(true);
-        $opcache->method('getNumberCachedScripts')
-            ->willReturn(count($this->list));
-        $opcache->method('getHits')
-            ->willReturn(1001);
-        $opcache->method('getStatus')
-            ->willReturn([
-                'memory_usage' => [
-                    'used_memory' => rand(1000, 999999),
-                    'free_memory' => rand(1000, 999999),
-                    'wasted_memory' => rand(1000, 999999),
-                ],
-                'opcache_statistics' => [
-                    'num_cached_scripts' => rand(1000, 999999),
-                    'opcache_hit_rate' => rand(1, 99)/100,
-                    'misses' => rand(1000, 999999),
-                ],
-            ]);
-        $opcache->method('getScripts')
-            ->willReturn($this->list);
-
-        $preloader = new Preloader(new PreloaderCompiler, new PreloaderLister($opcache), $opcache);
-
-        $preloader
-            ->autoload($autoload = $this->workdir . '/autoload.php')
-            ->output($this->workdir . '/preload.php')
-            ->generate();
-
-        $contents = file_get_contents($this->workdir . '/preload.php');
-
-        $this->assertStringContainsString('require_once $file;', $contents);
-        $this->assertStringNotContainsString('opcache_compile_file($file);', $contents);
-
-        $preloader = new Preloader(new PreloaderCompiler, new PreloaderLister($opcache), $opcache);
-
-        $preloader
-            ->autoload($autoload = $this->workdir . '/autoload.php')
-            ->output($this->workdir . '/preload.php')
-            ->overwrite()
-            ->useCompile()
-            ->generate();
-
-        $contents = file_get_contents($this->workdir . '/preload.php');
-
-        $this->assertStringNotContainsString('require_once $file;', $contents);
-        $this->assertStringContainsString('opcache_compile_file($file);', $contents);
-
-        $preloader = new Preloader(new PreloaderCompiler, new PreloaderLister($opcache), $opcache);
-
-        $preloader
-            ->autoload($autoload = $this->workdir . '/autoload.php')
-            ->output($this->workdir . '/preload.php')
-            ->overwrite()
-            ->useRequire()
-            ->generate();
-
-        $contents = file_get_contents($this->workdir . '/preload.php');
-
-        $this->assertStringContainsString('require_once $file;', $contents);
-        $this->assertStringNotContainsString('opcache_compile_file($file);', $contents);
+        $this->assertInstanceOf(Preloader::class, Preloader::make());
     }
 
     protected function tearDown() : void

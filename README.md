@@ -108,6 +108,8 @@ use DarkGhostHunter\Preloader\Preloader;
 Preloader::make()->when(fn () => $app->cache()->get('should_run'));
 ```
 
+This is handy if you can combine the condition with your own application logic, like a given number of requests, or an external signal.
+
 #### `whenOneIn()`
 
 This is method is just a helper to allows you to quickly make generate a Preloader list in one of a given number of random chances.
@@ -120,13 +122,13 @@ use DarkGhostHunter\Preloader\Preloader;
 Preloader::make()->whenOneIn(50);
 ```
 
-For example, the above makes the Preloader generate a compiled list one in one hundred chances.
+For example, the above makes the Preloader generate a compiled list one in fifty chances.
 
 ### Listing
 
 #### `append()`
 
-You can add a list of directories to the compiled list. These will be appended to the compiled list, and won't account for memory restrictions. 
+You can add a list of directories to the compiled list. The files inside them will be appended to the compiled list, and won't account for memory restrictions. 
 
 ```php
 <?php
@@ -134,7 +136,7 @@ You can add a list of directories to the compiled list. These will be appended t
 use DarkGhostHunter\Preloader\Preloader;
 
 Preloader::make()->append([
-    __DIR__ . '/files/', 
+    __DIR__ . '/files/*/more_files', 
     __DIR__ . '/classes/'
 ]);
 ```
@@ -168,7 +170,7 @@ You can pass an array of paths, which is good if you already have a list ready t
 use DarkGhostHunter\Preloader\Preloader;
 
 Preloader::make()->exclude([
-    __DIR__ . '/packages', 
+    __DIR__ . '/files/*/more_files',
     __DIR__ . '/vendor'
 ]);
 ```
@@ -192,7 +194,7 @@ Preloader::make()->exclude(function (Finder $find) {
 
 Automatically excludes the Package files from the Preload list.
 
-By default, the package is not excluded, since it may be heavily requested on Opcache. It's recommended to exclude the package only if you have total confidence it won't be called once Opcache Preloading is enabled.
+By default, the package is not excluded, since it may be part of the most requested files. It's recommended to exclude the package only if you have total confidence it won't be called once Opcache Preloading is enabled.
 
 ```php
 <?php
@@ -221,6 +223,8 @@ Preloader::make()->memoryLimit(32);
 This takes into account the `memory_consumption` key of each script cached in Opcache, not the real file size.
 
 > This limit doesn't have any relation with Opcache memory limit. 
+
+To disable any memory limit, use `memoryLimit(0)`. This will list **ALL** available files from Opcache.
 
 #### `shouldRequire()`
 
@@ -270,7 +274,7 @@ This may become handy if you have your own script, or you just want to tinker ar
 
 ## Example
 
-Okay. Let's say we have a codebase with thousand of files. We don't know any metrics, so we will make generate a preloader script if the request hits the lottery 1 on 100.
+Okay. Let's say we have a codebase with thousand of files. We don't know any metrics, so we will make generate a preloader script if the request hits the lottery 1 on 100, with a memory limit of 64MB.
 
 ```php
 <?php
@@ -288,9 +292,9 @@ $response = $app->run();
 $response->sendToBrowser();
 
 Preloader::make()
-    ->when(fn() => rand(1, 100) === 50)
-    ->memory(256)
-    ->writeTo(PHP_LOCALSTATEDIR . '/preload.php') // put it in /var.;
+    ->whenOneIn(100)
+    ->memory(64)
+    ->writeTo(PHP_LOCALSTATEDIR . '/preload.php'); // put it in /var.;
 ```
 
 ## Security

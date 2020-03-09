@@ -28,38 +28,27 @@ trait ManagesFiles
     protected bool $selfExclude = false;
 
     /**
-     * Append a list of files to the preload list, outside the memory limit.
+     * Append a list of directories to the preload list, outside the memory limit.
      *
-     * @param  string|array|\Closure|\Symfony\Component\Finder\Finder  $files
+     * @param  string|array|\Closure|\Symfony\Component\Finder\Finder  $directories
      * @return $this
      */
-    public function append($files)
+    public function append($directories) : self
     {
-        $this->appended = $this->findFiles($files);
+        $this->appended = $this->findFiles($directories);
 
         return $this;
     }
 
     /**
-     * Append a list of files to the preload list, outside the memory limit.
+     * Exclude a list of directories from the preload list generation.
      *
-     * @param  string|array|\Closure|\Symfony\Component\Finder\Finder  $files
+     * @param  string|array|\Closure|\Symfony\Component\Finder\Finder  $directories
      * @return $this
      */
-    public function include($files)
+    public function exclude($directories) : self
     {
-        return $this->append($files);
-    }
-
-    /**
-     * Exclude a list of files from the preload list generation.
-     *
-     * @param  string|array|\Closure|\Symfony\Component\Finder\Finder  $files
-     * @return $this
-     */
-    public function exclude($files)
-    {
-        $this->excluded = $this->findFiles($files);
+        $this->excluded = $this->findFiles($directories);
 
         return $this;
     }
@@ -69,7 +58,7 @@ trait ManagesFiles
      *
      * @return $this
      */
-    public function selfExclude()
+    public function selfExclude() : self
     {
         $this->selfExclude = true;
 
@@ -85,9 +74,7 @@ trait ManagesFiles
     protected function findFiles($files) : Finder
     {
         if (is_callable($files)) {
-            $finder = $files(new Finder());
-        } elseif ($files instanceof Finder) {
-            $finder = $files;
+            $files($finder = new Finder());
         } else {
             $finder = (new Finder())->in($files);
         }
@@ -106,7 +93,7 @@ trait ManagesFiles
         $paths = [];
 
         foreach ($finder as $file) {
-            $paths = $file->getRealPath();
+            $paths[] = $file->getRealPath();
         }
 
         return $paths;

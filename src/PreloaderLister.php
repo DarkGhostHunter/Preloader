@@ -2,6 +2,8 @@
 
 namespace DarkGhostHunter\Preloader;
 
+use const DIRECTORY_SEPARATOR;
+
 class PreloaderLister
 {
     /**
@@ -16,7 +18,7 @@ class PreloaderLister
      *
      * @var float
      */
-    public float $memory;
+    public float $memory = Preloader::MEMORY_LIMIT;
 
     /**
      * Exclude the package files.
@@ -131,8 +133,10 @@ class PreloaderLister
      */
     protected function excludedPackageFiles()
     {
-        return $this->selfExclude
-            ? array_map(fn ($entry) => realpath($entry), glob(realpath(__DIR__ . '/') . '/*.php'))
-            : [];
+        if ($this->selfExclude) {
+            return array_map(fn ($entry) => realpath($entry), glob(realpath(__DIR__) . DIRECTORY_SEPARATOR . '*.php'));
+        }
+
+        return [];
     }
 }

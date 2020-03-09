@@ -33,7 +33,7 @@ trait GeneratesScript
      *
      * @throws \RuntimeException
      */
-    public function memory($limit)
+    public function memoryLimit($limit) : self
     {
         $this->memory = (float)$limit;
 
@@ -43,12 +43,13 @@ trait GeneratesScript
     /**
      * Use `require_once $file` to preload each file on the list.
      *
+     * @param  string  $autoloader
      * @return $this
      */
-    public function useRequire(string $autoloader)
+    public function useRequire(string $autoloader)  : self
     {
         $this->useRequire = true;
-        $this->autoload = $autoloader;
+        $this->autoloader = $autoloader;
 
         return $this;
     }
@@ -86,10 +87,10 @@ trait GeneratesScript
     protected function getPreloaderConfig()
     {
         return [
-            '@preloader_memory_limit' => $this->lister->memory,
+            '@preloader_memory_limit' => $this->memory ? $this->memory . ' MB' : '(disabled)',
             '@preloader_overwrite'    => $this->overwrite ? 'true' : 'false',
-            '@preloader_appended'     => count($this->lister->append),
-            '@preloader_excluded'     => count($this->lister->exclude),
+            '@preloader_appended'     => count($this->lister->appended),
+            '@preloader_excluded'     => count($this->lister->excluded),
         ];
     }
 }

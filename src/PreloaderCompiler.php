@@ -46,14 +46,14 @@ class PreloaderCompiler
      *
      * @var null|string
      */
-    public ?string $autoload = null;
+    public ?string $autoloader = null;
 
     /**
      * PHP.ini preload list input.
      *
      * @var string
      */
-    public string $output;
+    public string $writeTo;
 
     /**
      * Returns a compiled string
@@ -65,7 +65,7 @@ class PreloaderCompiler
         $replacing = array_merge($this->preloaderConfig, $this->opcacheConfig, [
             '@output'       => $this->scriptRealPath(),
             '@generated_at' => date('Y-m-d H:i:s e'),
-            '@autoload'     => realpath($this->autoload),
+            '@autoload'     => isset($this->autoload) ? realpath($this->autoloader) : null,
             '@list'         => $this->parseList(),
             '@mechanism'    => $this->useRequire ? 'require_once $file' : 'opcache_compile_file($file)',
         ]);
@@ -80,22 +80,22 @@ class PreloaderCompiler
      */
     protected function scriptRealPath()
     {
-        if ($path = realpath($this->output)) {
+        // @codeCoverageIgnoreStart
+        if (isset($this->writeTo) && $path = realpath($this->writeTo)) {
             return $path;
         }
 
-        // @codeCoverageIgnoreStart
         // We will try to create a dummy file and just then get the real path of it.
         // After getting the real path, we will delete it and return the path. If
         // we can't, then we will just return the output path string as-it-is.
-        if (! touch($this->output)) {
-            return $this->output;
+        if (! touch($this->writeTo)) {
+            return $this->writeTo;
         }
         // @codeCoverageIgnoreEnd
 
-        $path = realpath($this->output);
+        $path = realpath($this->writeTo);
 
-        unlink($this->output);
+        unlink($this->writeTo);
 
         return $path;
     }
