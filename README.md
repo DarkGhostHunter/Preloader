@@ -113,7 +113,7 @@ This is handy if you can combine the condition with your own application logic, 
 
 #### `whenOneIn()`
 
-This is method is just a helper to allows you to quickly make generate a Preloader list in one of a given number of random chances.
+This is method is just a helper to allows you to quickly generate a Preloader script in one of a given number of random chances.
 
 ```php
 <?php
@@ -307,7 +307,7 @@ Technically speaking, the Opcache preloads the files in a different process, so 
 
 ## Example
 
-Okay. Let's say we have a codebase with thousand of files. We don't know any metrics, so we will make generate a preloader script if the request hits the lottery 1 on 100, with a memory limit of 64MB.
+Okay. Let's say we have a codebase with thousand of files. We don't know any metrics, so we will generate a preloader script if the request hits the lottery 1 on 100, with a memory limit of 64MB.
 
 ```php
 <?php
@@ -326,7 +326,7 @@ $response->sendToBrowser();
 
 Preloader::make()
     ->whenOneIn(100)
-    ->memory(64)
+    ->memoryLimit(64)
     ->writeTo(PHP_LOCALSTATEDIR . '/preload.php'); // put it in /var.;
 ```
 
