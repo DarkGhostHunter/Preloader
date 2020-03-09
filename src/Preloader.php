@@ -7,15 +7,21 @@ use RuntimeException;
 
 class Preloader
 {
-    use Conditions;
-    use LimitsList;
+    use ConditionsScript;
     use ManagesFiles;
     use GeneratesScript;
 
     /**
-     * Stub for the preload file script
+     * Default memory limit for the preload list.
      *
-     * @const
+     * @var float
+     */
+    public const MEMORY_LIMIT = 32.0;
+
+    /**
+     * Stub for the preload file script.
+     *
+     * @var string
      */
     protected const STUB_LOCATION = __DIR__ . '/preload.php.stub';
 
@@ -24,31 +30,24 @@ class Preloader
      *
      * @var bool
      */
-    protected bool $overwrite = false;
+    protected bool $overwrite = true;
 
     /**
-     * The preload list script location.
-     *
-     * @var null|string
-     */
-    protected ?string $output = null;
-
-    /**
-     * The class in charge to write the preloader
+     * The class in charge to write the preloader.
      *
      * @var \DarkGhostHunter\Preloader\PreloaderCompiler
      */
     protected PreloaderCompiler $compiler;
 
     /**
-     * Script List builder
+     * Script List builder.
      *
      * @var \DarkGhostHunter\Preloader\PreloaderLister
      */
     protected PreloaderLister $lister;
 
     /**
-     * Opcache class access
+     * Opcache class access.
      *
      * @var \DarkGhostHunter\Preloader\Opcache
      */
@@ -57,9 +56,9 @@ class Preloader
     /**
      * Preloader constructor.
      *
-     * @param  \DarkGhostHunter\Preloader\PreloaderCompiler $compiler
-     * @param  \DarkGhostHunter\Preloader\PreloaderLister $lister
-     * @param  \DarkGhostHunter\Preloader\Opcache $opcache
+     * @param  \DarkGhostHunter\Preloader\PreloaderCompiler  $compiler
+     * @param  \DarkGhostHunter\Preloader\PreloaderLister  $lister
+     * @param  \DarkGhostHunter\Preloader\Opcache  $opcache
      */
     public function __construct(PreloaderCompiler $compiler, PreloaderLister $lister, Opcache $opcache)
     {
@@ -69,134 +68,113 @@ class Preloader
     }
 
     /**
-     * Determines if the preload file should be rewritten;
-     *
-     * @param  bool $overwrite
-     * @return $this
-     */
-    public function overwrite(bool $overwrite = true) : self
-    {
-        $this->overwrite = $overwrite;
-
-        return $this;
-    }
-
-    /**
-     * Sets the path of the Composer Autoload (usually, "vendor/autoload.php");
-     *
-     * @param  string $autoload
-     * @return $this
-     */
-    public function autoload(string $autoload) : self
-    {
-        $this->compiler->autoload = $autoload;
-
-        return $this;
-    }
-
-    /**
-     * Indicates the preload script output file.
-     *
-     * @param  string $path
-     * @return $this
-     */
-    public function output(string $path) : self
-    {
-        $this->output = $this->compiler->output = $path;
-
-        return $this;
-    }
-
-    /**
      * Returns the raw list of files to include in the script
      *
      * @return array
      */
-    public function list()
+    public function getList() : array
     {
-        return $this->lister->build();
+        return $this->prepareLister()->build();
     }
 
     /**
-     * Use `opcache_compile_file()` to preload each file on the list.
+     * Prepares the Preload Lister.
      *
-     * @return $this
+     * @return \DarkGhostHunter\Preloader\PreloaderLister
      */
-    public function useCompile()
+    protected function prepareLister()
     {
-        $this->compiler->useRequire = false;
+        $this->lister->list = $this->opcache->getScripts();
+        $this->lister->memory = $this->memory;
+        $this->lister->selfExclude = $this->selfExclude;
+        $this->lister->appended = isset($this->appended) ? $this->getFilesFromFinder($this->appended) : [];
+        $this->lister->excluded = isset($this->excluded) ? $this->getFilesFromFinder($this->excluded) : [];
 
-        return $this;
+        return $this->lister;
     }
 
     /**
-     * Use `require_once $file` to preload each file on the list.
+     * Writes the Preload script to the given path.
      *
-     * @return $this
-     */
-    public function useRequire()
-    {
-        $this->compiler->useRequire = true;
-
-        return $this;
-    }
-
-    /**
-     * Generates a preload script of files.
-     *
+     * @param  string  $path
+     * @param  bool  $overwrite
      * @return bool
-     * @throws \LogicException|\RuntimeException
      */
-    public function generate()
+    public function writeTo(string $path, bool $overwrite = true) : bool
     {
-        if (! $this->canGenerate()) {
-            return false;
+        return $this->canGenerate($path, $overwrite) && $this->performWrite($path);
+    }
+
+    /**
+     * Return if this Preloader can NOT generate the script.
+     *
+     * @param  string  $path
+     * @param  bool  $overwrite
+     * @return bool
+     */
+    protected function canGenerate(string $path, bool $overwrite) : bool
+    {
+        // When using require, check if the autoloader exists.
+        if ($this->useRequire && ! file_exists($this->autoloader)) {
+            throw new LogicException('Cannot proceed without a Composer Autoload.');
         }
 
-        $this->compiler->contents = file_get_contents(static::STUB_LOCATION);
-        $this->compiler->opcacheConfig = $this->getOpcacheConfig();
-        $this->compiler->preloaderConfig = $this->getPreloaderConfig();
-        $this->compiler->list = $this->list();
-
-        // @codeCoverageIgnoreStart
-        if (! file_put_contents($this->output, $this->compiler->compile(), LOCK_EX)) {
-            throw new RuntimeException("Preloader couldn't write the script to [$this->output].");
+        // Bail out if Opcache is not enabled.
+        if (! $this->opcache->isEnabled()) {
+            throw new LogicException('Opcache is disabled. No preload script can be generated.');
         }
-        // @codeCoverageIgnoreEnd
+
+        // Also bail out if Opcache doesn't have any cached script.
+        if (! $this->opcache->getNumberCachedScripts()) {
+            throw new LogicException('Opcache reports 0 cached scripts. No preload can be generated.');
+        }
+
+        // We can't generate a script if we can't overwrite an existing file.
+        if (! ($this->overwrite = $overwrite) && file_exists($path)) {
+            throw new LogicException('Preloader script already exists in the given path.');
+        }
+
+        // If there is a condition, call it.
+        if ($this->condition) {
+            return (bool) call_user_func($this->condition);
+        }
 
         return true;
     }
 
     /**
-     * Return if this Preloader can NOT generate the script
+     * Writes the preloader script file into the specified path.
      *
-     * @return bool
-     * @throws \LogicException
+     * @param  string  $path
+     * @return false|int
+     *
+     * @codeCoverageIgnore
      */
-    protected function canGenerate()
+    protected function performWrite(string $path)
     {
-        if (! $this->output) {
-            throw new LogicException('Cannot proceed without pointing where to output the script.');
+        if (file_put_contents($path, $this->prepareCompiler($path)->compile(), LOCK_EX)) {
+            return true;
         }
 
-        if (! $this->compiler->autoload) {
-            throw new LogicException('Cannot proceed without a Composer Autoload.');
-        }
+        throw new RuntimeException("Preloader couldn't write the script to [$path].");
+    }
 
-        if (! file_exists($this->compiler->autoload)) {
-            throw new LogicException('Composer Autoload file doesn\'t exists.');
-        }
+    /**
+     * Prepares the Compiler to make a list.
+     *
+     * @param  string  $path
+     * @return \DarkGhostHunter\Preloader\PreloaderCompiler
+     */
+    protected function prepareCompiler(string $path)
+    {
+        $this->compiler->list = $this->getList();
+        $this->compiler->autoloader = $this->autoloader;
+        $this->compiler->contents = file_get_contents(static::STUB_LOCATION);
+        $this->compiler->opcacheConfig = $this->getOpcacheConfig();
+        $this->compiler->preloaderConfig = $this->getPreloaderConfig();
+        $this->compiler->writeTo = $path;
 
-        if (! $this->opcache->isEnabled()) {
-            throw new LogicException('Opcache is disabled. No preload script can be generated.');
-        }
-
-        if (! $this->opcache->getNumberCachedScripts()) {
-            throw new LogicException('Opcache reports 0 cached scripts. No preload will be generated.');
-        }
-
-        // We should be able to run the script if the conditions are met and we can write the file
-        return $this->shouldRun && $this->shouldWrite();
+        return $this->compiler;
     }
 
     /**
@@ -204,8 +182,8 @@ class Preloader
      *
      * @return static
      */
-    public static function make()
+    public static function make() : self
     {
-        return new static(new PreloaderCompiler, new PreloaderLister($opcache = new Opcache), $opcache);
+        return new static(new PreloaderCompiler, new PreloaderLister, new Opcache);
     }
 }

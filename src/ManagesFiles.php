@@ -2,64 +2,100 @@
 
 namespace DarkGhostHunter\Preloader;
 
+use Symfony\Component\Finder\Finder;
+
 trait ManagesFiles
 {
     /**
-     * Include the Preloader files in the file list.
+     * Appended file list.
      *
-     * @param  bool $include
+     * @var \Symfony\Component\Finder\Finder
+     */
+    protected Finder $appended;
+
+    /**
+     * Excluded file list.
+     *
+     * @var \Symfony\Component\Finder\Finder
+     */
+    protected Finder $excluded;
+
+    /**
+     * If the package should be excluded from preload list.
+     *
+     * @var bool
+     */
+    protected bool $selfExclude = false;
+
+    /**
+     * Append a list of directories to the preload list, outside the memory limit.
+     *
+     * @param  string|array|\Closure|\Symfony\Component\Finder\Finder  $directories
      * @return $this
      */
-    public function includePreloader(bool $include = true)
+    public function append($directories) : self
     {
-        $this->lister->includePreloader = $include;
+        $this->appended = $this->findFiles($directories);
 
         return $this;
     }
 
     /**
-     * Append a list of files to the preload list. These won't count for file and memory limits.
+     * Exclude a list of directories from the preload list generation.
      *
-     * @param $files
+     * @param  string|array|\Closure|\Symfony\Component\Finder\Finder  $directories
      * @return $this
      */
-    public function append($files) : self
+    public function exclude($directories) : self
     {
-        $this->lister->append = $this->listFiles((array)$files);
+        $this->excluded = $this->findFiles($directories);
 
         return $this;
     }
 
     /**
-     * Exclude a list of files from the preload list generation.
+     * Excludes the package files from the preload list.
      *
-     * @param $files
      * @return $this
      */
-    public function exclude($files) : self
+    public function selfExclude() : self
     {
-        $this->lister->exclude = $this->listFiles((array)$files);
+        $this->selfExclude = true;
 
         return $this;
     }
 
     /**
-     * Take every file string and pass it to the glob function.
+     * Instantiates the Symfony Finder to look for files.
      *
-     * @param array $files
+     * @param  string|array|\Closure|\Symfony\Component\Finder\Finder  $files
+     * @return \Symfony\Component\Finder\Finder
+     */
+    protected function findFiles($files) : Finder
+    {
+        if (is_callable($files)) {
+            $files($finder = new Finder());
+        } else {
+            $finder = (new Finder())->in($files);
+        }
+
+        return $finder->files();
+    }
+
+    /**
+     * Return an array of the files from the Finder.
+     *
+     * @param  \Symfony\Component\Finder\Finder  $finder
      * @return array
      */
-    protected function listFiles(array $files) : array
+    protected function getFilesFromFinder(Finder $finder) : array
     {
         $paths = [];
 
-        // We will cycle trough each "file" and save the resulting array given by glob.
-        // If the glob returns false, we will trust the developer goodwill and add it
-        // anyway, since the file may not yet exist until after the preload compile.
-        foreach ($files as $file) {
-            $paths[] = glob($file) ?: [$file];
+        foreach ($finder as $file) {
+            $paths[] = $file->getRealPath();
         }
 
-        return array_merge(...$paths);
+        return $paths;
     }
 }
