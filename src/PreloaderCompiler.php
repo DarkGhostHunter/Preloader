@@ -32,7 +32,7 @@ class PreloaderCompiler
      *
      * @var bool
      */
-    public bool $useRequire = true;
+    public bool $useRequire;
 
     /**
      * The file list to include.
