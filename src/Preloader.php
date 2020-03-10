@@ -172,6 +172,8 @@ class Preloader
         $this->compiler->contents = file_get_contents(static::STUB_LOCATION);
         $this->compiler->opcacheConfig = $this->getOpcacheConfig();
         $this->compiler->preloaderConfig = $this->getPreloaderConfig();
+        $this->compiler->useRequire = $this->useRequire;
+        $this->compiler->autoloader = $this->autoloader;
         $this->compiler->writeTo = $path;
 
         return $this->compiler;
