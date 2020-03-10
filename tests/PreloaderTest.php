@@ -33,7 +33,7 @@ class PreloaderTest extends TestCase
         $this->preloaderPath = $this->workdir . DIRECTORY_SEPARATOR . 'preloader.php';
     }
 
-    public function test_when_condition_receives_callable_and_resolves_on_generation()
+    protected function mockOpcache($list = null)
     {
         $this->opcache->method('isEnabled')
             ->willReturn(true);
@@ -55,7 +55,12 @@ class PreloaderTest extends TestCase
                 ],
             ]);
         $this->opcache->method('getScripts')
-            ->willReturn($this->list);
+            ->willReturn($list ?? $this->list);
+    }
+
+    public function test_when_condition_receives_callable_and_resolves_on_generation()
+    {
+        $this->mockOpcache();
 
         $preloader = new Preloader(new PreloaderCompiler, new PreloaderLister, $this->opcache);
 
@@ -74,27 +79,7 @@ class PreloaderTest extends TestCase
 
     public function test_when_one_in_condition_receives_callable_and_resolves_on_generation()
     {
-        $this->opcache->method('isEnabled')
-            ->willReturn(true);
-        $this->opcache->method('getNumberCachedScripts')
-            ->willReturn(1000);
-        $this->opcache->method('getHits')
-            ->willReturn(1001);
-        $this->opcache->method('getStatus')
-            ->willReturn([
-                'memory_usage' => [
-                    'used_memory' => $usedMemory = rand(1000, 999999),
-                    'free_memory' => $freeMemory = rand(1000, 999999),
-                    'wasted_memory' => $wastedMemory = rand(1000, 999999),
-                ],
-                'opcache_statistics' => [
-                    'num_cached_scripts' => $cachedScripts = rand(1000, 999999),
-                    'opcache_hit_rate' => $hitRate = rand(100, 9999)/100,
-                    'misses' => $misses = rand(1000, 999999),
-                ],
-            ]);
-        $this->opcache->method('getScripts')
-            ->willReturn($this->list);
+        $this->mockOpcache();
 
         $preloader = new Preloader(new PreloaderCompiler, new PreloaderLister, $this->opcache);
 
@@ -112,27 +97,7 @@ class PreloaderTest extends TestCase
 
     public function test_append_files_as_array()
     {
-        $this->opcache->method('isEnabled')
-            ->willReturn(true);
-        $this->opcache->method('getNumberCachedScripts')
-            ->willReturn(1000);
-        $this->opcache->method('getHits')
-            ->willReturn(1001);
-        $this->opcache->method('getStatus')
-            ->willReturn([
-                'memory_usage' => [
-                    'used_memory' => $usedMemory = rand(1000, 999999),
-                    'free_memory' => $freeMemory = rand(1000, 999999),
-                    'wasted_memory' => $wastedMemory = rand(1000, 999999),
-                ],
-                'opcache_statistics' => [
-                    'num_cached_scripts' => $cachedScripts = rand(1000, 999999),
-                    'opcache_hit_rate' => $hitRate = rand(100, 9999)/100,
-                    'misses' => $misses = rand(1000, 999999),
-                ],
-            ]);
-        $this->opcache->method('getScripts')
-            ->willReturn($this->list);
+        $this->mockOpcache();
 
         $preloader = new Preloader(new PreloaderCompiler, new PreloaderLister, $this->opcache);
 
@@ -163,27 +128,7 @@ class PreloaderTest extends TestCase
 
     public function test_append_files_as_callable()
     {
-        $this->opcache->method('isEnabled')
-            ->willReturn(true);
-        $this->opcache->method('getNumberCachedScripts')
-            ->willReturn(1000);
-        $this->opcache->method('getHits')
-            ->willReturn(1001);
-        $this->opcache->method('getStatus')
-            ->willReturn([
-                'memory_usage' => [
-                    'used_memory' => $usedMemory = rand(1000, 999999),
-                    'free_memory' => $freeMemory = rand(1000, 999999),
-                    'wasted_memory' => $wastedMemory = rand(1000, 999999),
-                ],
-                'opcache_statistics' => [
-                    'num_cached_scripts' => $cachedScripts = rand(1000, 999999),
-                    'opcache_hit_rate' => $hitRate = rand(100, 9999)/100,
-                    'misses' => $misses = rand(1000, 999999),
-                ],
-            ]);
-        $this->opcache->method('getScripts')
-            ->willReturn($this->list);
+        $this->mockOpcache();
 
         $preloader = new Preloader(new PreloaderCompiler, new PreloaderLister, $this->opcache);
 
@@ -214,43 +159,23 @@ class PreloaderTest extends TestCase
 
     public function test_exclude_files_as_array()
     {
-        $this->opcache->method('isEnabled')
-            ->willReturn(true);
-        $this->opcache->method('getNumberCachedScripts')
-            ->willReturn(1000);
-        $this->opcache->method('getHits')
-            ->willReturn(1001);
-        $this->opcache->method('getStatus')
-            ->willReturn([
-                'memory_usage' => [
-                    'used_memory' => $usedMemory = rand(1000, 999999),
-                    'free_memory' => $freeMemory = rand(1000, 999999),
-                    'wasted_memory' => $wastedMemory = rand(1000, 999999),
-                ],
-                'opcache_statistics' => [
-                    'num_cached_scripts' => $cachedScripts = rand(1000, 999999),
-                    'opcache_hit_rate' => $hitRate = rand(100, 9999)/100,
-                    'misses' => $misses = rand(1000, 999999),
-                ],
-            ]);
-        $this->opcache->method('getScripts')
-            ->willReturn([
-                implode(DIRECTORY_SEPARATOR, [$this->workdir, 'examples', 'test_a', 'foo.php']) => [ // 3
-                    'hits' => 10,
-                    'memory_consumption' => 1 * (1024 ** 2),
-                    'last_used_timestamp' => 1400000000
-                ],
-                implode(DIRECTORY_SEPARATOR, [$this->workdir, 'examples', 'test_a', 'bar.php']) => [ // 1
-                    'hits' => 20,
-                    'memory_consumption' => 3 * (1024 ** 2),
-                    'last_used_timestamp' => 1400000002
-                ],
-                implode(DIRECTORY_SEPARATOR, [$this->workdir, 'examples', 'test_b', 'qux.php']) => [ // 1
-                    'hits' => 20,
-                    'memory_consumption' => 3 * (1024 ** 2),
-                    'last_used_timestamp' => 1400000002
-                ],
-            ]);
+        $this->mockOpcache([
+            implode(DIRECTORY_SEPARATOR, [$this->workdir, 'examples', 'test_a', 'foo.php']) => [ // 3
+                'hits' => 10,
+                'memory_consumption' => 1 * (1024 ** 2),
+                'last_used_timestamp' => 1400000000
+            ],
+            implode(DIRECTORY_SEPARATOR, [$this->workdir, 'examples', 'test_a', 'bar.php']) => [ // 1
+                'hits' => 20,
+                'memory_consumption' => 3 * (1024 ** 2),
+                'last_used_timestamp' => 1400000002
+            ],
+            implode(DIRECTORY_SEPARATOR, [$this->workdir, 'examples', 'test_b', 'qux.php']) => [ // 1
+                'hits' => 20,
+                'memory_consumption' => 3 * (1024 ** 2),
+                'last_used_timestamp' => 1400000002
+            ],
+        ]);
 
         $preloader = new Preloader(new PreloaderCompiler, new PreloaderLister, $this->opcache);
 
@@ -277,43 +202,23 @@ class PreloaderTest extends TestCase
 
     public function test_exclude_files_as_closure()
     {
-        $this->opcache->method('isEnabled')
-            ->willReturn(true);
-        $this->opcache->method('getNumberCachedScripts')
-            ->willReturn(1000);
-        $this->opcache->method('getHits')
-            ->willReturn(1001);
-        $this->opcache->method('getStatus')
-            ->willReturn([
-                'memory_usage' => [
-                    'used_memory' => $usedMemory = rand(1000, 999999),
-                    'free_memory' => $freeMemory = rand(1000, 999999),
-                    'wasted_memory' => $wastedMemory = rand(1000, 999999),
-                ],
-                'opcache_statistics' => [
-                    'num_cached_scripts' => $cachedScripts = rand(1000, 999999),
-                    'opcache_hit_rate' => $hitRate = rand(100, 9999)/100,
-                    'misses' => $misses = rand(1000, 999999),
-                ],
-            ]);
-        $this->opcache->method('getScripts')
-            ->willReturn([
-                implode(DIRECTORY_SEPARATOR, [$this->workdir, 'examples', 'test_a', 'foo.php']) => [ // 3
-                    'hits' => 10,
-                    'memory_consumption' => 1 * (1024 ** 2),
-                    'last_used_timestamp' => 1400000000
-                ],
-                implode(DIRECTORY_SEPARATOR, [$this->workdir, 'examples', 'test_a', 'bar.php']) => [ // 1
-                    'hits' => 20,
-                    'memory_consumption' => 3 * (1024 ** 2),
-                    'last_used_timestamp' => 1400000002
-                ],
-                implode(DIRECTORY_SEPARATOR, [$this->workdir, 'examples', 'test_b', 'qux.php']) => [ // 1
-                    'hits' => 20,
-                    'memory_consumption' => 3 * (1024 ** 2),
-                    'last_used_timestamp' => 1400000002
-                ],
-            ]);
+        $this->mockOpcache([
+            implode(DIRECTORY_SEPARATOR, [$this->workdir, 'examples', 'test_a', 'foo.php']) => [ // 3
+                'hits' => 10,
+                'memory_consumption' => 1 * (1024 ** 2),
+                'last_used_timestamp' => 1400000000
+            ],
+            implode(DIRECTORY_SEPARATOR, [$this->workdir, 'examples', 'test_a', 'bar.php']) => [ // 1
+                'hits' => 20,
+                'memory_consumption' => 3 * (1024 ** 2),
+                'last_used_timestamp' => 1400000002
+            ],
+            implode(DIRECTORY_SEPARATOR, [$this->workdir, 'examples', 'test_b', 'qux.php']) => [ // 1
+                'hits' => 20,
+                'memory_consumption' => 3 * (1024 ** 2),
+                'last_used_timestamp' => 1400000002
+            ],
+        ]);
 
         $preloader = new Preloader(new PreloaderCompiler, new PreloaderLister, $this->opcache);
 
@@ -340,58 +245,38 @@ class PreloaderTest extends TestCase
 
     public function test_self_excludes_from_list()
     {
-        $this->opcache->method('isEnabled')
-            ->willReturn(true);
-        $this->opcache->method('getNumberCachedScripts')
-            ->willReturn(1000);
-        $this->opcache->method('getHits')
-            ->willReturn(1001);
-        $this->opcache->method('getStatus')
-            ->willReturn([
-                'memory_usage' => [
-                    'used_memory' => $usedMemory = rand(1000, 999999),
-                    'free_memory' => $freeMemory = rand(1000, 999999),
-                    'wasted_memory' => $wastedMemory = rand(1000, 999999),
-                ],
-                'opcache_statistics' => [
-                    'num_cached_scripts' => $cachedScripts = rand(1000, 999999),
-                    'opcache_hit_rate' => $hitRate = rand(100, 9999)/100,
-                    'misses' => $misses = rand(1000, 999999),
-                ],
-            ]);
-        $this->opcache->method('getScripts')
-            ->willReturn([
-                implode(DIRECTORY_SEPARATOR, [$this->workdir, 'examples', 'test_a', 'foo.php']) => [ // 3
-                    'hits' => 10,
-                    'memory_consumption' => 1 * (1024 ** 2),
-                    'last_used_timestamp' => 1400000000
-                ],
-                implode(DIRECTORY_SEPARATOR, [$this->workdir, 'examples', 'test_a', 'bar.php']) => [ // 1
-                    'hits' => 20,
-                    'memory_consumption' => 3 * (1024 ** 2),
-                    'last_used_timestamp' => 1400000002
-                ],
-                implode(DIRECTORY_SEPARATOR, [$this->workdir, 'examples', 'test_b', 'qux.php']) => [ // 1
-                    'hits' => 20,
-                    'memory_consumption' => 3 * (1024 ** 2),
-                    'last_used_timestamp' => 1400000002
-                ],
-                implode(DIRECTORY_SEPARATOR, [$this->workdir, 'examples', 'test_b', 'quz.php']) => [ // 1
-                    'hits' => 20,
-                    'memory_consumption' => 3 * (1024 ** 2),
-                    'last_used_timestamp' => 1400000002
-                ],
-                realpath(implode(DIRECTORY_SEPARATOR, [__DIR__, '..', 'src', 'Opcache.php'])) => [ // 1
-                    'hits' => 20,
-                    'memory_consumption' => 3 * (1024 ** 2),
-                    'last_used_timestamp' => 1400000002
-                ],
-                realpath(implode(DIRECTORY_SEPARATOR, [__DIR__, '..', 'src', 'Preloader.php'])) => [ // 1
-                    'hits' => 20,
-                    'memory_consumption' => 3 * (1024 ** 2),
-                    'last_used_timestamp' => 1400000002
-                ],
-            ]);
+        $this->mockOpcache([
+            implode(DIRECTORY_SEPARATOR, [$this->workdir, 'examples', 'test_a', 'foo.php']) => [ // 3
+                'hits' => 10,
+                'memory_consumption' => 1 * (1024 ** 2),
+                'last_used_timestamp' => 1400000000
+            ],
+            implode(DIRECTORY_SEPARATOR, [$this->workdir, 'examples', 'test_a', 'bar.php']) => [ // 1
+                'hits' => 20,
+                'memory_consumption' => 3 * (1024 ** 2),
+                'last_used_timestamp' => 1400000002
+            ],
+            implode(DIRECTORY_SEPARATOR, [$this->workdir, 'examples', 'test_b', 'qux.php']) => [ // 1
+                'hits' => 20,
+                'memory_consumption' => 3 * (1024 ** 2),
+                'last_used_timestamp' => 1400000002
+            ],
+            implode(DIRECTORY_SEPARATOR, [$this->workdir, 'examples', 'test_b', 'quz.php']) => [ // 1
+                'hits' => 20,
+                'memory_consumption' => 3 * (1024 ** 2),
+                'last_used_timestamp' => 1400000002
+            ],
+            realpath(implode(DIRECTORY_SEPARATOR, [__DIR__, '..', 'src', 'Opcache.php'])) => [ // 1
+                'hits' => 20,
+                'memory_consumption' => 3 * (1024 ** 2),
+                'last_used_timestamp' => 1400000002
+            ],
+            realpath(implode(DIRECTORY_SEPARATOR, [__DIR__, '..', 'src', 'Preloader.php'])) => [ // 1
+                'hits' => 20,
+                'memory_consumption' => 3 * (1024 ** 2),
+                'last_used_timestamp' => 1400000002
+            ],
+        ]);
 
         $preloader = new Preloader(new PreloaderCompiler, new PreloaderLister, $this->opcache);
 
@@ -428,27 +313,7 @@ class PreloaderTest extends TestCase
 
     public function test_limits_memory_list()
     {
-        $this->opcache->method('isEnabled')
-            ->willReturn(true);
-        $this->opcache->method('getNumberCachedScripts')
-            ->willReturn(1000);
-        $this->opcache->method('getHits')
-            ->willReturn(1001);
-        $this->opcache->method('getStatus')
-            ->willReturn([
-                'memory_usage' => [
-                    'used_memory' => $usedMemory = rand(1000, 999999),
-                    'free_memory' => $freeMemory = rand(1000, 999999),
-                    'wasted_memory' => $wastedMemory = rand(1000, 999999),
-                ],
-                'opcache_statistics' => [
-                    'num_cached_scripts' => $cachedScripts = rand(1000, 999999),
-                    'opcache_hit_rate' => $hitRate = rand(100, 9999)/100,
-                    'misses' => $misses = rand(1000, 999999),
-                ],
-            ]);
-        $this->opcache->method('getScripts')
-            ->willReturn($this->list);
+        $this->mockOpcache();
 
         $preloader = new Preloader(new PreloaderCompiler, new PreloaderLister, $this->opcache);
 
@@ -466,27 +331,7 @@ class PreloaderTest extends TestCase
 
     public function test_memory_limit_disabled_lists_all_files()
     {
-        $this->opcache->method('isEnabled')
-            ->willReturn(true);
-        $this->opcache->method('getNumberCachedScripts')
-            ->willReturn(1000);
-        $this->opcache->method('getHits')
-            ->willReturn(1001);
-        $this->opcache->method('getStatus')
-            ->willReturn([
-                'memory_usage' => [
-                    'used_memory' => $usedMemory = rand(1000, 999999),
-                    'free_memory' => $freeMemory = rand(1000, 999999),
-                    'wasted_memory' => $wastedMemory = rand(1000, 999999),
-                ],
-                'opcache_statistics' => [
-                    'num_cached_scripts' => $cachedScripts = rand(1000, 999999),
-                    'opcache_hit_rate' => $hitRate = rand(100, 9999)/100,
-                    'misses' => $misses = rand(1000, 999999),
-                ],
-            ]);
-        $this->opcache->method('getScripts')
-            ->willReturn($this->list);
+        $this->mockOpcache();
 
         $preloader = new Preloader(new PreloaderCompiler, new PreloaderLister, $this->opcache);
 
@@ -502,29 +347,23 @@ class PreloaderTest extends TestCase
         $this->assertStringContainsString('baz.php', $contents);
     }
 
+    public function test_uses_compile_by_default()
+    {
+        $this->mockOpcache();
+
+        $preloader = new Preloader(new PreloaderCompiler, new PreloaderLister, $this->opcache);
+
+        $preloader->writeTo($this->preloaderPath);
+
+        $contents = file_get_contents($this->preloaderPath);
+
+        $this->assertStringContainsString('opcache_compile_file($file)', $contents);
+        $this->assertStringNotContainsString('autoload', $contents);
+    }
+
     public function test_uses_require_instead_of_compile()
     {
-        $this->opcache->method('isEnabled')
-            ->willReturn(true);
-        $this->opcache->method('getNumberCachedScripts')
-            ->willReturn(1000);
-        $this->opcache->method('getHits')
-            ->willReturn(1001);
-        $this->opcache->method('getStatus')
-            ->willReturn([
-                'memory_usage' => [
-                    'used_memory' => $usedMemory = rand(1000, 999999),
-                    'free_memory' => $freeMemory = rand(1000, 999999),
-                    'wasted_memory' => $wastedMemory = rand(1000, 999999),
-                ],
-                'opcache_statistics' => [
-                    'num_cached_scripts' => $cachedScripts = rand(1000, 999999),
-                    'opcache_hit_rate' => $hitRate = rand(100, 9999)/100,
-                    'misses' => $misses = rand(1000, 999999),
-                ],
-            ]);
-        $this->opcache->method('getScripts')
-            ->willReturn($this->list);
+        $this->mockOpcache();
 
         $preloader = new Preloader(new PreloaderCompiler, new PreloaderLister, $this->opcache);
 
@@ -534,10 +373,10 @@ class PreloaderTest extends TestCase
 
         $contents = file_get_contents($this->preloaderPath);
 
-        $this->assertStringContainsString('require_once ' . implode(DIRECTORY_SEPARATOR, [
+        $this->assertStringContainsString('require_once ' . realpath(implode(DIRECTORY_SEPARATOR, [
             $this->workdir, 'autoload.php'
-        ]), $contents);
-        $this->assertStringContainsString('require_once ', $contents);
+        ])), $contents);
+        $this->assertStringContainsString('require_once $file', $contents);
     }
 
     public function test_exception_when_autoload_doesnt_exists()
@@ -545,27 +384,7 @@ class PreloaderTest extends TestCase
         $this->expectException(LogicException::class);
         $this->expectExceptionMessage('Cannot proceed without a Composer Autoload.');
 
-        $this->opcache->method('isEnabled')
-            ->willReturn(true);
-        $this->opcache->method('getNumberCachedScripts')
-            ->willReturn(1000);
-        $this->opcache->method('getHits')
-            ->willReturn(1001);
-        $this->opcache->method('getStatus')
-            ->willReturn([
-                'memory_usage' => [
-                    'used_memory' => $usedMemory = rand(1000, 999999),
-                    'free_memory' => $freeMemory = rand(1000, 999999),
-                    'wasted_memory' => $wastedMemory = rand(1000, 999999),
-                ],
-                'opcache_statistics' => [
-                    'num_cached_scripts' => $cachedScripts = rand(1000, 999999),
-                    'opcache_hit_rate' => $hitRate = rand(100, 9999)/100,
-                    'misses' => $misses = rand(1000, 999999),
-                ],
-            ]);
-        $this->opcache->method('getScripts')
-            ->willReturn($this->list);
+        $this->mockOpcache();
 
         $preloader = new Preloader(new PreloaderCompiler, new PreloaderLister, $this->opcache);
 
@@ -576,27 +395,7 @@ class PreloaderTest extends TestCase
 
     public function test_raw_list()
     {
-        $this->opcache->method('isEnabled')
-            ->willReturn(true);
-        $this->opcache->method('getNumberCachedScripts')
-            ->willReturn(1000);
-        $this->opcache->method('getHits')
-            ->willReturn(1001);
-        $this->opcache->method('getStatus')
-            ->willReturn([
-                'memory_usage' => [
-                    'used_memory' => $usedMemory = rand(1000, 999999),
-                    'free_memory' => $freeMemory = rand(1000, 999999),
-                    'wasted_memory' => $wastedMemory = rand(1000, 999999),
-                ],
-                'opcache_statistics' => [
-                    'num_cached_scripts' => $cachedScripts = rand(1000, 999999),
-                    'opcache_hit_rate' => $hitRate = rand(100, 9999)/100,
-                    'misses' => $misses = rand(1000, 999999),
-                ],
-            ]);
-        $this->opcache->method('getScripts')
-            ->willReturn($this->list);
+        $this->mockOpcache();
 
         $preloader = new Preloader(new PreloaderCompiler, new PreloaderLister, $this->opcache);
 
