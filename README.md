@@ -29,7 +29,7 @@ This package generates a [PHP 7.4 preloading](https://www.php.net/manual/en/opca
     + [`selfExclude()`](#selfexclude)
   * [Generation](#generation)
     + [`memoryLimit()`](#memorylimit)
-    + [`shouldRequire()`](#shouldrequire)
+    + [`useRequire()`](#userequire)
   * [Compilation](#compilation)
     + [`writeTo()`](#writeto)
     + [`getList()`](#getlist)
@@ -161,7 +161,7 @@ Preloader::make()->append(function (Finder $find) {
 
 #### `exclude()`
 
-This method excludes a file or list of files from Opcache list of files, which later end up in the Preload list. Excluding these files will free up the memory of the compiled list, leaving space for others files to be included.
+This method excludes files from inside directories from Opcache list, which later end up in the Preload list. Excluding files may free up the memory of the compiled list, leaving space for others to be included.
 
 You can pass an array of paths, which is good if you already have a list ready to exclude.
  
@@ -209,7 +209,7 @@ Preloader::make()->selfExclude();
 
 #### `memoryLimit()`
 
-By default, Preloader defaults a memory limit of 32MB, which is enough for *most* applications. The The Preloader will generate a list of files until that memory limit is reached.
+By default, Preloader defaults a memory limit of 32MB, which is enough for *most* applications. TThehe Preloader will generate a list of files until that memory limit is reached.
 
 You can set your own memory limit in **MB**. 
 
@@ -225,20 +225,20 @@ This takes into account the `memory_consumption` key of each script cached in Op
 
 > This limit doesn't have any relation with Opcache memory limit. 
 
-To disable any memory limit, use `memoryLimit(0)`. This will list **ALL** available files from Opcache.
+To disable the limit, use `memoryLimit(0)`. This will list **ALL** available files from Opcache.
 
-#### `shouldRequire()`
+#### `useRequire()`
 
-By default, the Preloader will upload the file to Opcache using `opcache_compile_file()`. This avoids executing any file in your project, but no links (traits, interfaces, extended classes, ...) will be resolved from the files compiled, but you may have some warnings of unresolved links when preloading (nothing too dangerous).
+By default, the Preloader will upload the files to Opcache using `opcache_compile_file()`. This avoids executing any file in your project, but no links (traits, interfaces, extended classes, ...) will be resolved from the files compiled. You may have some warnings of unresolved links when preloading (nothing too dangerous).
 
-You can change this using `shouldRequire()`, which changes to  `require_once`, along the path the Composer Autoloader (usually at `vendor/autoload.php`) to resolve the links.
+You can change this using `useRequire()`, which changes to  `require_once`, along the path the Composer Autoloader (usually at `vendor/autoload.php`) to resolve the links.
 
 ```php
 <?php
 
 use DarkGhostHunter\Preloader\Preloader;
 
-Preloader::make()->shouldRequire(__DIR__ . '/../vendor/autoload.php');
+Preloader::make()->useRequire(__DIR__ . '/../vendor/autoload.php');
 ```
 
 > You may get some warnings when compiling a file with unresolved links. These are not critical, since these files usually are the least requested in your application.
