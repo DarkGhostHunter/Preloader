@@ -455,6 +455,30 @@ class PreloaderTest extends TestCase
         $this->assertInstanceOf(Preloader::class, Preloader::make());
     }
 
+    public function test_accepts_empty_array_for_excluding()
+    {
+        $this->mockOpcache();
+
+        $preloader = new Preloader(new PreloaderCompiler, new PreloaderLister, $this->opcache);
+
+        $list = $preloader->exclude([])->getList();
+
+        $this->assertIsArray($list);
+        $this->assertCount(5, $list);
+    }
+
+    public function test_accepts_empty_array_for_appending()
+    {
+        $this->mockOpcache();
+
+        $preloader = new Preloader(new PreloaderCompiler, new PreloaderLister, $this->opcache);
+
+        $list = $preloader->append([])->getList();
+
+        $this->assertIsArray($list);
+        $this->assertCount(5, $list);
+    }
+
     protected function tearDown() : void
     {
         parent::tearDown();

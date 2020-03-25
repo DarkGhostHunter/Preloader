@@ -2,6 +2,7 @@
 
 namespace DarkGhostHunter\Preloader;
 
+use LogicException;
 use Symfony\Component\Finder\Finder;
 
 trait ManagesFiles
@@ -75,7 +76,8 @@ trait ManagesFiles
     {
         if (is_callable($files)) {
             $files($finder = new Finder());
-        } else {
+        }
+        else {
             $finder = (new Finder())->in($files);
         }
 
@@ -92,10 +94,18 @@ trait ManagesFiles
     {
         $paths = [];
 
-        foreach ($finder as $file) {
-            $paths[] = $file->getRealPath();
-        }
+        try {
+            foreach ($finder as $file) {
+                $paths[] = $file->getRealPath();
+            }
 
-        return $paths;
+            return $paths;
+        }
+        // If the developer used an empty array for the Finder instance, we will just
+        // catch the exception thrown by having no directories to find and return an
+        // empty array. Otherwise the Preloader will fail when retrieving the list.
+        catch (LogicException $exception) {
+            return $paths;
+        }
     }
 }
