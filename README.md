@@ -50,7 +50,7 @@ Require this using Composer into your project
 
     composer require darkghosthunter/preloader
 
-> This package doesn't requires `ext-opcache` to install. Just be sure to have it [enabled in your application server](https://www.php.net/manual/en/book.opcache.php).
+> This package doesn't require `ext-opcache` to install. Just be sure to have it [enabled in your application server](https://www.php.net/manual/en/book.opcache.php).
 
 ## Usage
 
@@ -209,7 +209,7 @@ Preloader::make()->selfExclude();
 
 #### `memoryLimit()`
 
-By default, Preloader defaults a memory limit of 32MB, which is enough for *most* applications. TThehe Preloader will generate a list of files until that memory limit is reached.
+By default, Preloader defaults a memory limit of 32MB, which is enough for *most* applications. The Preloader will generate a list of files until that memory limit is reached.
 
 You can set your own memory limit in **MB**. 
 
