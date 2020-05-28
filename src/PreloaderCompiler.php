@@ -66,7 +66,7 @@ class PreloaderCompiler
             '@output'       => $this->scriptRealPath(),
             '@generated_at' => date('Y-m-d H:i:s e'),
             '@autoload'     => isset($this->autoloader)
-                ? 'require_once ' . realpath($this->autoloader) : null,
+                ? 'require_once \'' . realpath($this->autoloader) . '\';': null,
             '@list'         => $this->parseList(),
             '@mechanism'    => $this->useRequire
                 ? 'require_once $file' : 'opcache_compile_file($file)',

@@ -373,9 +373,11 @@ class PreloaderTest extends TestCase
 
         $contents = file_get_contents($this->preloaderPath);
 
-        $this->assertStringContainsString('require_once ' . realpath(implode(DIRECTORY_SEPARATOR, [
+        $path = realpath(implode(DIRECTORY_SEPARATOR, [
             $this->workdir, 'autoload.php'
-        ])), $contents);
+        ]));
+        $expectedRequire = "require_once '$path';";
+        $this->assertStringContainsString($expectedRequire, $contents);
         $this->assertStringContainsString('require_once $file', $contents);
     }
 
