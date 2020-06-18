@@ -2,6 +2,8 @@
 
 namespace DarkGhostHunter\Preloader;
 
+use RuntimeException;
+
 /**
  * Class Opcache
  *
@@ -22,11 +24,22 @@ class Opcache
      * Get status information about the cache
      *
      * @see https://www.php.net/manual/en/function.opcache-get-status.php
+     *
+     * @throws RuntimeException When Opcache is disabled
+     *
      * @return array
      */
     public function getStatus() : array
     {
-        return $this->status ??= opcache_get_status(true);
+        if ($this->status) {
+            return $this->status;
+        }
+        $opcacheStatus = opcache_get_status(true);
+        if (! $opcacheStatus) {
+            throw new RuntimeException('Opcache is disabled. Try to enable it with `opcache.enable=0` and|or `opcache.enable_cli=1` (for CLI). Further references https://www.php.net/manual/en/opcache.configuration.php');
+        }
+
+        return $this->status = $opcacheStatus;
     }
 
     /**
