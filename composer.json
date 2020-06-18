@@ -22,8 +22,8 @@
     "require": {
         "php": "^7.4",
         "ext-json": "*",
-        "symfony/finder": "^4.3||^5.0.5",
-        "ext-zend-opcache": "*"
+        "ext-zend-opcache": "*",
+        "symfony/finder": "^4.3||^5.0.5"
     },
     "require-dev": {
         "phpunit/phpunit": "^9.0"
