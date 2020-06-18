@@ -18,7 +18,7 @@ class Opcache
      *
      * @var array
      */
-    protected array $status;
+    protected array $status = [];
 
     /**
      * Get status information about the cache
