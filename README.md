@@ -23,6 +23,7 @@ This package generates a [PHP 7.4 preloading](https://www.php.net/manual/en/opca
 - [Configuration](#configuration)
   * [Conditions](#conditions)
     + [`when()`](#when)
+    + [`whenOneIn()`](#whenOneIn)
   * [Listing](#listing)
     + [`append()`](#append)
     + [`exclude()`](#exclude)
