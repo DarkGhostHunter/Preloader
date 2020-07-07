@@ -403,7 +403,23 @@ class PreloaderTest extends TestCase
         $this->assertStringNotContainsString('$PRELOAD$', $contents);
     }
 
-    public function test_excludes_exception_throw_if_file_doesnt_exists()
+    public function test_includes_error_when_files_dont_exists()
+    {
+        $this->mockOpcache();
+
+        $preloader = new Preloader(new PreloaderCompiler, new PreloaderLister, $this->opcache);
+
+        $preloader->writeTo($this->preloaderPath);
+
+        $contents = file_get_contents($this->preloaderPath);
+
+        $this->assertStringContainsString('throw new \Exception("{$file} does not exist or is unreadable.");', $contents);
+        $this->assertStringNotContainsString('if (!(is_file($file) && is_readable($file))) {
+            continue;
+        }', $contents);
+    }
+
+    public function test_excludes_exception_if_file_doesnt_exists_by_default()
     {
         $this->mockOpcache();
 
