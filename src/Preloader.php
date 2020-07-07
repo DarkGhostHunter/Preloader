@@ -173,6 +173,7 @@ class Preloader
         $this->compiler->opcacheConfig = $this->getOpcacheConfig();
         $this->compiler->preloaderConfig = $this->getPreloaderConfig();
         $this->compiler->useRequire = $this->useRequire;
+        $this->compiler->ignoreNotFound = $this->ignoreNotFound;
         $this->compiler->autoloader = $this->autoloader;
         $this->compiler->writeTo = $path;
 
