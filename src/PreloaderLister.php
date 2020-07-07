@@ -48,8 +48,11 @@ class PreloaderLister
      */
     public function build() : array
     {
+        // Exclude "$PRELOAD$" phantom file
+        $scripts = $this->excludePreloadVariable($this->list);
+
         // Exclude the files set by the developer
-        $scripts = $this->exclude($this->list);
+        $scripts = $this->exclude($scripts);
 
         // Sort the scripts by hit ratio
         $scripts = $this->sortScripts($scripts);
@@ -62,6 +65,19 @@ class PreloaderLister
 
         // Remove duplicates and return
         return array_unique($scripts);
+    }
+
+    /**
+     * Excludes de `$PRELOAD$` file key from the list.
+     *
+     * @param  array  $list
+     * @return array
+     */
+    protected function excludePreloadVariable(array $list)
+    {
+        unset($list['$PRELOAD$']);
+
+        return $list;
     }
 
     /**

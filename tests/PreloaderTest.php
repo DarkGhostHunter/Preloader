@@ -381,6 +381,28 @@ class PreloaderTest extends TestCase
         $this->assertStringContainsString('require_once $file', $contents);
     }
 
+    public function test_excludes_phantom_preload_variable()
+    {
+        $this->list['$PRELOAD$'] = [
+            'full_path' => '$PRELOAD$',
+            'hits' => 0,
+            'memory_consumption' => 560,
+            'last_used' => 'Thu Jan  1 01:00:00 1970',
+            'last_used_timestamp' => 0,
+            'timestamp' => 0
+        ];
+
+        $this->mockOpcache();
+
+        $preloader = new Preloader(new PreloaderCompiler, new PreloaderLister, $this->opcache);
+
+        $preloader->writeTo($this->preloaderPath);
+
+        $contents = file_get_contents($this->preloaderPath);
+
+        $this->assertStringNotContainsString('$PRELOAD$', $contents);
+    }
+
     public function test_exception_when_autoload_doesnt_exists()
     {
         $this->expectException(LogicException::class);
