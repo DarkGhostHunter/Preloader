@@ -31,6 +31,7 @@ This package generates a [PHP 7.4 preloading](https://www.php.net/manual/en/opca
   * [Generation](#generation)
     + [`memoryLimit()`](#memorylimit)
     + [`useRequire()`](#userequire)
+    + [`ignoreNotFound()`](#ignorenotfound)
   * [Compilation](#compilation)
     + [`writeTo()`](#writeto)
     + [`getList()`](#getlist)
@@ -243,6 +244,22 @@ Preloader::make()->useRequire(__DIR__ . '/../vendor/autoload.php');
 ```
 
 > You may get some warnings when compiling a file with unresolved links. These are not critical, since these files usually are the least requested in your application.
+
+#### `ignoreNotFound()`
+
+Some applications may create files at runtime that are genuinely cached by Opcache, but doesn't exist when the application is firstly deployed.
+
+To avoid this problem, you can use the `ignoreNotFound()`, which will compile a script that ignore files not found or are unreadable.
+
+```php
+<?php
+
+use DarkGhostHunter\Preloader\Preloader;
+
+Preloader::make()->ignoreNotFound();
+```
+
+> If the file is readable but its preloading returns an error, it will throw an exception nonetheless.
 
 ### Compilation
 
