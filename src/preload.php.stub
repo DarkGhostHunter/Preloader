@@ -39,17 +39,8 @@
 $files = [@list];
 
 foreach ($files as $file) {
-    try {
-        if (!(is_file($file) && is_readable($file))) {
-            throw new \Exception("{$file} does not exist or is unreadable.");
-        }
+    if (is_file($file) && is_readable($file)) {
         @mechanism;
-    } catch (\Throwable $e) {
-        echo 'Preloader Script has stopped with an error:' . \PHP_EOL;
-        echo 'Message: ' . $e->getMessage() . \PHP_EOL;
-        echo 'File: ' . $file . \PHP_EOL;
-
-        throw $e;
     }
 }
 
