@@ -26,6 +26,13 @@ trait GeneratesScript
     protected ?string $autoloader = null;
 
     /**
+     * If the script should ignore files not found.
+     *
+     * @var bool
+     */
+    protected bool $ignoreNotFound = false;
+
+    /**
      * Memory limit (in MB) to constrain the file list.
      *
      * @param  int|float  $limit
@@ -50,6 +57,19 @@ trait GeneratesScript
     {
         $this->useRequire = true;
         $this->autoloader = $autoloader;
+
+        return $this;
+    }
+
+    /**
+     * If it should NOT throw an exception when a file to preload doesn't exists.
+     *
+     * @param  bool  $ignore
+     * @return $this
+     */
+    public function ignoreNotFound($ignore = true)
+    {
+        $this->ignoreNotFound = $ignore;
 
         return $this;
     }

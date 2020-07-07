@@ -56,6 +56,13 @@ class PreloaderCompiler
     public string $writeTo;
 
     /**
+     * If it should add exception for not-found files.
+     *
+     * @var bool
+     */
+    public bool $ignoreNotFound;
+
+    /**
      * Returns a compiled string
      *
      * @return string|string[]
@@ -68,6 +75,7 @@ class PreloaderCompiler
             '@autoload'     => isset($this->autoloader)
                 ? 'require_once \'' . realpath($this->autoloader) . '\';': null,
             '@list'         => $this->parseList(),
+            '@failure'      => $this->ignoreNotFound ? 'continue;' : 'throw new \Exception("{$file} does not exist or is unreadable.");',
             '@mechanism'    => $this->useRequire
                 ? 'require_once $file' : 'opcache_compile_file($file)',
         ]);

@@ -41,7 +41,7 @@ $files = [@list];
 foreach ($files as $file) {
     try {
         if (!(is_file($file) && is_readable($file))) {
-            throw new \Exception("{$file} does not exist or is unreadable.");
+            @failure
         }
         @mechanism;
     } catch (\Throwable $e) {
