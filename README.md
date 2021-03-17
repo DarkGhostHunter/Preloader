@@ -10,7 +10,7 @@ Braden Collum - Unsplash (UL) #9HI8UJMSdZA](https://images.unsplash.com/photo-14
 
 Get the best options to keep your application fast as ever, with just one line.
 
-This package generates a [PHP 7.4 preloading](https://www.php.net/manual/en/opcache.configuration.php#ini.opcache.preload) script from your Opcache statistics automatically. No need to hack your way in.
+This package generates a [PHP preloading](https://www.php.net/manual/en/opcache.configuration.php#ini.opcache.preload) script from your Opcache statistics automatically. No need to hack your way in.
 
 > If you're looking for preloading your Laravel project, check [Laraload](https://github.com/DarkGhostHunter/Laraload).
 
@@ -42,8 +42,8 @@ This package generates a [PHP 7.4 preloading](https://www.php.net/manual/en/opca
 
 ## Requirements
 
-* PHP 7.4.3 or later.
-* [Opcache enabled](https://www.php.net/manual/en/book.opcache.php) (`ext-opcache`).
+* PHP 7.4.3, PHP 8.0 or later.
+* [Opcache & Preloading enabled](https://www.php.net/manual/en/book.opcache.php) (`ext-opcache`).
 * Composer Autoloader (optional).
 
 ## Installation
@@ -73,13 +73,13 @@ This will automatically gather Opcache statistics, and write an optimized `prelo
         ├── PreloaderCall.php
         └── preload.php
 
-Once generated, tell PHP to use this file as a preloader at startup in your `php.ini`.
+Once generated, tell PHP to use this file as a preloader at start up in your `php.ini`.
 
 ```ini
 opcache.preload=/www/app/preload.php
 ```
 
-Restart your PHP process that's using Opcache, and that's all, you're good.
+Once the script is generated, **you're encouraged to restart your PHP process** (or server, in some cases) to pick up the generated preload script. Only generating the script [is not enough](https://www.php.net/manual/en/opcache.preloading.php).
 
 > If you use Preloader when Opcache is disabled or without hits, you will get an Exception.
 
