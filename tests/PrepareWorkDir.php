@@ -66,7 +66,6 @@ trait PrepareWorkDir
         }
 
         if (is_dir($this->workdir . DIRECTORY_SEPARATOR . 'examples')) {
-
             foreach ((new Finder())->files()->in($this->workdir . DIRECTORY_SEPARATOR . 'examples') as $file) {
                 /** @var SplFileObject $file */
                 unlink($file->getRealPath());

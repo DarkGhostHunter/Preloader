@@ -17,6 +17,11 @@
             "name": "Italo Israel Baeza Cabrera",
             "email": "darkghosthunter@gmail.com",
             "role": "Developer"
+        },
+        {
+            "name": "Diego Rin martín",
+            "email": "yosoy@diego.ninja",
+            "role": "Developer"
         }
     ],
     "require": {
@@ -25,7 +30,11 @@
         "symfony/finder": "^4||^5||^6"
     },
     "require-dev": {
-        "phpunit/phpunit": "^9.3"
+        "roave/security-advisories": "dev-latest",
+        "phpunit/phpunit": "^9",
+        "vimeo/psalm": "^4",
+        "squizlabs/php_codesniffer": "^3.5",
+        "dealerdirect/phpcodesniffer-composer-installer": "^0.7"
     },
     "autoload": {
         "psr-4": {
@@ -41,6 +50,9 @@
         "test": "vendor/bin/phpunit --coverage-clover build/logs/clover.xml"
     },
     "config": {
-        "sort-packages": true
+        "sort-packages": true,
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        }
     }
 }

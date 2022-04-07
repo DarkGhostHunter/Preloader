@@ -8,7 +8,7 @@ class Opcache
 {
     protected array $status;
 
-    public function getStatus() : array
+    public function getStatus(): array
     {
         if ($this->status ??= opcache_get_status(true)) {
             return $this->status;
@@ -19,12 +19,12 @@ class Opcache
         );
     }
 
-    public function isEnabled() : bool
+    public function isEnabled(): bool
     {
         return $this->getStatus()['opcache_enabled'];
     }
 
-    public function getScripts() : array
+    public function getScripts(): array
     {
         return $this->getStatus()['scripts'];
     }
