@@ -1,51 +1,17 @@
 <?php
 
-namespace DarkGhostHunter\Preloader;
+namespace Ninja\Preloader;
 
 use const DIRECTORY_SEPARATOR;
 
 class PreloaderLister
 {
-    /**
-     * List of opcache file list.
-     *
-     * @var array
-     */
     public array $list;
-
-    /**
-     * Memory limit for the list.
-     *
-     * @var float
-     */
     public float $memory = Preloader::MEMORY_LIMIT;
-
-    /**
-     * Exclude the package files.
-     *
-     * @var bool
-     */
     public bool $selfExclude = false;
-
-    /**
-     * List of appended files.
-     *
-     * @var array
-     */
     public array $appended = [];
-
-    /**
-     * List of excluded files.
-     *
-     * @var array
-     */
     public array $excluded = [];
 
-    /**
-     * Builds a list of scripts.
-     *
-     * @return array
-     */
     public function build() : array
     {
         // Exclude "$PRELOAD$" phantom file
@@ -67,26 +33,14 @@ class PreloaderLister
         return array_unique($scripts);
     }
 
-    /**
-     * Excludes de `$PRELOAD$` file key from the list.
-     *
-     * @param  array  $list
-     * @return array
-     */
-    protected function excludePreloadVariable(array $list)
+    protected function excludePreloadVariable(array $list): array
     {
         unset($list['$PRELOAD$']);
 
         return $list;
     }
 
-    /**
-     * Retrieve a sorted scripts list used by Opcache.
-     *
-     * @param  array $scripts
-     * @return array
-     */
-    protected function sortScripts(array $scripts)
+    protected function sortScripts(array $scripts): array
     {
         // There is no problem here with the Preloader.
         array_multisort(
@@ -98,13 +52,7 @@ class PreloaderLister
         return $scripts;
     }
 
-    /**
-     * Cuts the files by their cumulative memory consumption.
-     *
-     * @param $files
-     * @return array
-     */
-    protected function cutByMemoryLimit($files)
+    protected function cutByMemoryLimit($files): array
     {
         // Exit early if the memory limit is zero (disabled).
         if (! $limit = $this->memory * 1024**2) {
@@ -131,26 +79,18 @@ class PreloaderLister
         return $resulting;
     }
 
-    /**
-     * Exclude files from the list
-     *
-     * @param  array  $scripts
-     * @return array
-     */
-    protected function exclude(array $scripts)
+    protected function exclude(array $scripts): array
     {
         return array_diff_key($scripts, array_flip(array_merge($this->excluded, $this->excludedPackageFiles())));
     }
 
-    /**
-     * Get the list of files excluded for this package
-     *
-     * @return array
-     */
-    protected function excludedPackageFiles()
+    protected function excludedPackageFiles(): array
     {
         if ($this->selfExclude) {
-            return array_map(fn ($entry) => realpath($entry), glob(realpath(__DIR__) . DIRECTORY_SEPARATOR . '*.php'));
+            return array_map(
+                static fn ($entry) => realpath($entry),
+                glob(realpath(__DIR__) . DIRECTORY_SEPARATOR . '*.php')
+            );
         }
 
         return [];

@@ -2,6 +2,7 @@
 
 namespace Tests;
 
+use SplFileObject;
 use Symfony\Component\Finder\Finder;
 
 trait PrepareWorkDir
@@ -67,7 +68,7 @@ trait PrepareWorkDir
         if (is_dir($this->workdir . DIRECTORY_SEPARATOR . 'examples')) {
 
             foreach ((new Finder())->files()->in($this->workdir . DIRECTORY_SEPARATOR . 'examples') as $file) {
-                /** @var \SplFileObject $file */
+                /** @var SplFileObject $file */
                 unlink($file->getRealPath());
             }
 

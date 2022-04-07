@@ -2,23 +2,24 @@
 
 namespace Tests;
 
+use Exception;
 use LogicException;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Finder\Finder;
-use DarkGhostHunter\Preloader\Opcache;
-use DarkGhostHunter\Preloader\Preloader;
-use DarkGhostHunter\Preloader\PreloaderLister;
-use DarkGhostHunter\Preloader\PreloaderCompiler;
+use Ninja\Preloader\Opcache;
+use Ninja\Preloader\Preloader;
+use Ninja\Preloader\PreloaderLister;
+use Ninja\Preloader\PreloaderCompiler;
 use const DIRECTORY_SEPARATOR;
 
 class PreloaderTest extends TestCase
 {
     use PrepareWorkDir;
 
-    /** @var \DarkGhostHunter\Preloader\Opcache|\PHPUnit\Framework\MockObject\MockObject  */
-    protected $opcache;
+    protected MockObject|Opcache $opcache;
 
-    protected $preloaderPath;
+    protected string $preloaderPath;
 
     protected function setUp() : void
     {
@@ -33,7 +34,10 @@ class PreloaderTest extends TestCase
         $this->preloaderPath = $this->workdir . DIRECTORY_SEPARATOR . 'preloader.php';
     }
 
-    protected function mockOpcache($list = null)
+    /**
+     * @throws Exception
+     */
+    protected function mockOpcache($list = null): void
     {
         $this->opcache->method('isEnabled')
             ->willReturn(true);
@@ -44,21 +48,24 @@ class PreloaderTest extends TestCase
         $this->opcache->method('getStatus')
             ->willReturn([
                 'memory_usage' => [
-                    'used_memory' => $usedMemory = rand(1000, 999999),
-                    'free_memory' => $freeMemory = rand(1000, 999999),
-                    'wasted_memory' => $wastedMemory = rand(1000, 999999),
+                    'used_memory' => $usedMemory = random_int(1000, 999999),
+                    'free_memory' => $freeMemory = random_int(1000, 999999),
+                    'wasted_memory' => $wastedMemory = random_int(1000, 999999),
                 ],
                 'opcache_statistics' => [
-                    'num_cached_scripts' => $cachedScripts = rand(1000, 999999),
-                    'opcache_hit_rate' => $hitRate = rand(100, 9999)/100,
-                    'misses' => $misses = rand(1000, 999999),
+                    'num_cached_scripts' => $cachedScripts = random_int(1000, 999999),
+                    'opcache_hit_rate' => $hitRate = random_int(100, 9999)/100,
+                    'misses' => $misses = random_int(1000, 999999),
                 ],
             ]);
         $this->opcache->method('getScripts')
             ->willReturn($list ?? $this->list);
     }
 
-    public function test_when_condition_receives_callable_and_resolves_on_generation()
+    /**
+     * @throws Exception
+     */
+    public function test_when_condition_receives_callable_and_resolves_on_generation(): void
     {
         $this->mockOpcache();
 
@@ -77,7 +84,10 @@ class PreloaderTest extends TestCase
         $this->assertTrue($resolved);
     }
 
-    public function test_when_one_in_condition_receives_callable_and_resolves_on_generation()
+    /**
+     * @throws Exception
+     */
+    public function test_when_one_in_condition_receives_callable_and_resolves_on_generation(): void
     {
         $this->mockOpcache();
 
@@ -95,7 +105,10 @@ class PreloaderTest extends TestCase
         $this->assertTrue($write);
     }
 
-    public function test_append_files_as_array()
+    /**
+     * @throws Exception
+     */
+    public function test_append_files_as_array(): void
     {
         $this->mockOpcache();
 
@@ -126,7 +139,10 @@ class PreloaderTest extends TestCase
         );
     }
 
-    public function test_append_files_as_callable()
+    /**
+     * @throws Exception
+     */
+    public function test_append_files_as_callable(): void
     {
         $this->mockOpcache();
 
@@ -157,7 +173,10 @@ class PreloaderTest extends TestCase
         );
     }
 
-    public function test_exclude_files_as_array()
+    /**
+     * @throws Exception
+     */
+    public function test_exclude_files_as_array(): void
     {
         $this->mockOpcache([
             implode(DIRECTORY_SEPARATOR, [$this->workdir, 'examples', 'test_a', 'foo.php']) => [ // 3
@@ -200,7 +219,10 @@ class PreloaderTest extends TestCase
         );
     }
 
-    public function test_exclude_files_as_closure()
+    /**
+     * @throws Exception
+     */
+    public function test_exclude_files_as_closure(): void
     {
         $this->mockOpcache([
             implode(DIRECTORY_SEPARATOR, [$this->workdir, 'examples', 'test_a', 'foo.php']) => [ // 3
@@ -243,7 +265,10 @@ class PreloaderTest extends TestCase
         );
     }
 
-    public function test_self_excludes_from_list()
+    /**
+     * @throws Exception
+     */
+    public function test_self_excludes_from_list(): void
     {
         $this->mockOpcache([
             implode(DIRECTORY_SEPARATOR, [$this->workdir, 'examples', 'test_a', 'foo.php']) => [ // 3
@@ -311,7 +336,10 @@ class PreloaderTest extends TestCase
         );
     }
 
-    public function test_limits_memory_list()
+    /**
+     * @throws Exception
+     */
+    public function test_limits_memory_list(): void
     {
         $this->mockOpcache();
 
@@ -329,7 +357,10 @@ class PreloaderTest extends TestCase
         $this->assertStringNotContainsString('baz.php', $contents);
     }
 
-    public function test_memory_limit_disabled_lists_all_files()
+    /**
+     * @throws Exception
+     */
+    public function test_memory_limit_disabled_lists_all_files(): void
     {
         $this->mockOpcache();
 
@@ -347,7 +378,10 @@ class PreloaderTest extends TestCase
         $this->assertStringContainsString('baz.php', $contents);
     }
 
-    public function test_uses_compile_by_default()
+    /**
+     * @throws Exception
+     */
+    public function test_uses_compile_by_default(): void
     {
         $this->mockOpcache();
 
@@ -361,7 +395,10 @@ class PreloaderTest extends TestCase
         $this->assertStringNotContainsString('autoload', $contents);
     }
 
-    public function test_uses_require_instead_of_compile()
+    /**
+     * @throws Exception
+     */
+    public function test_uses_require_instead_of_compile(): void
     {
         $this->mockOpcache();
 
@@ -381,7 +418,10 @@ class PreloaderTest extends TestCase
         $this->assertStringContainsString('require_once $file', $contents);
     }
 
-    public function test_excludes_phantom_preload_variable()
+    /**
+     * @throws Exception
+     */
+    public function test_excludes_phantom_preload_variable(): void
     {
         $this->list['$PRELOAD$'] = [
             'full_path' => '$PRELOAD$',
@@ -403,7 +443,10 @@ class PreloaderTest extends TestCase
         $this->assertStringNotContainsString('$PRELOAD$', $contents);
     }
 
-    public function test_includes_error_when_files_dont_exists()
+    /**
+     * @throws Exception
+     */
+    public function test_includes_error_when_files_dont_exists(): void
     {
         $this->mockOpcache();
 
@@ -419,7 +462,10 @@ class PreloaderTest extends TestCase
         }', $contents);
     }
 
-    public function test_excludes_exception_if_file_doesnt_exists_by_default()
+    /**
+     * @throws Exception
+     */
+    public function test_excludes_exception_if_file_doesnt_exists_by_default(): void
     {
         $this->mockOpcache();
 
@@ -435,7 +481,10 @@ class PreloaderTest extends TestCase
         }', $contents);
     }
 
-    public function test_exception_when_autoload_doesnt_exists()
+    /**
+     * @throws Exception
+     */
+    public function test_exception_when_autoload_doesnt_exists(): void
     {
         $this->expectException(LogicException::class);
         $this->expectExceptionMessage('Cannot proceed without a Composer Autoload.');
@@ -449,7 +498,10 @@ class PreloaderTest extends TestCase
         )->writeTo($this->preloaderPath);
     }
 
-    public function test_raw_list()
+    /**
+     * @throws Exception
+     */
+    public function test_raw_list(): void
     {
         $this->mockOpcache();
 
@@ -461,7 +513,7 @@ class PreloaderTest extends TestCase
         $this->assertCount(5, $list);
     }
 
-    public function test_exception_when_opcache_disabled()
+    public function test_exception_when_opcache_disabled(): void
     {
         $this->expectException(LogicException::class);
         $this->expectExceptionMessage('Opcache is disabled. No preload script can be generated.');
@@ -474,7 +526,7 @@ class PreloaderTest extends TestCase
         $preloader->writeTo('lol');
     }
 
-    public function test_exception_when_no_scripts_cached()
+    public function test_exception_when_no_scripts_cached(): void
     {
         $this->expectException(LogicException::class);
         $this->expectExceptionMessage('Opcache reports 0 cached scripts. No preload can be generated.');
@@ -489,7 +541,7 @@ class PreloaderTest extends TestCase
         $preloader->writeTo('lol');
     }
 
-    public function test_exception_when_no_overwriting()
+    public function test_exception_when_no_overwriting(): void
     {
         $this->expectException(LogicException::class);
         $this->expectExceptionMessage('Preloader script already exists in the given path.');
@@ -506,12 +558,15 @@ class PreloaderTest extends TestCase
         $this->assertFalse($preloader->writeTo($this->preloaderPath, false));
     }
 
-    public function test_helper_creates_instance()
+    public function test_helper_creates_instance(): void
     {
         $this->assertInstanceOf(Preloader::class, Preloader::make());
     }
 
-    public function test_accepts_empty_array_for_excluding()
+    /**
+     * @throws Exception
+     */
+    public function test_accepts_empty_array_for_excluding(): void
     {
         $this->mockOpcache();
 
@@ -523,7 +578,10 @@ class PreloaderTest extends TestCase
         $this->assertCount(5, $list);
     }
 
-    public function test_accepts_empty_array_for_appending()
+    /**
+     * @throws Exception
+     */
+    public function test_accepts_empty_array_for_appending(): void
     {
         $this->mockOpcache();
 
