@@ -23,7 +23,7 @@ class Preloader
     ) {
     }
 
-    public function getList() : array
+    public function getList(): array
     {
         return $this->prepareLister()->build();
     }
@@ -39,12 +39,12 @@ class Preloader
         return $this->lister;
     }
 
-    public function writeTo(string $path, bool $overwrite = true) : bool
+    public function writeTo(string $path, bool $overwrite = true): bool
     {
         return $this->canGenerate($path, $overwrite) && $this->performWrite($path);
     }
 
-    protected function canGenerate(string $path, bool $overwrite) : bool
+    protected function canGenerate(string $path, bool $overwrite): bool
     {
         // When using require, check if the autoloader exists.
         if ($this->useRequire && ! file_exists($this->autoloader)) {
@@ -98,8 +98,8 @@ class Preloader
         return $this->compiler;
     }
 
-    public static function make() : self
+    public static function make(): self
     {
-        return new static(new PreloaderCompiler, new PreloaderLister, new Opcache);
+        return new static(new PreloaderCompiler(), new PreloaderLister(), new Opcache());
     }
 }

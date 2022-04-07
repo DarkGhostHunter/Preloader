@@ -12,7 +12,7 @@ class PreloaderLister
     public array $appended = [];
     public array $excluded = [];
 
-    public function build() : array
+    public function build(): array
     {
         // Exclude "$PRELOAD$" phantom file
         $scripts = $this->excludePreloadVariable($this->list);
@@ -44,8 +44,10 @@ class PreloaderLister
     {
         // There is no problem here with the Preloader.
         array_multisort(
-            array_column($scripts, 'hits'), SORT_DESC,
-            array_column($scripts, 'last_used_timestamp'), SORT_DESC,
+            array_column($scripts, 'hits'),
+            SORT_DESC,
+            array_column($scripts, 'last_used_timestamp'),
+            SORT_DESC,
             $scripts
         );
 
@@ -55,7 +57,7 @@ class PreloaderLister
     protected function cutByMemoryLimit($files): array
     {
         // Exit early if the memory limit is zero (disabled).
-        if (! $limit = $this->memory * 1024**2) {
+        if (! $limit = $this->memory * 1024 ** 2) {
             return array_keys($files);
         }
 

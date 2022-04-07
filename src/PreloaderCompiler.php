@@ -15,15 +15,17 @@ class PreloaderCompiler
     public string $writeTo;
     public bool $ignoreNotFound;
 
-    public function compile() : string
+    public function compile(): string
     {
         $replacing = array_merge($this->preloaderConfig, $this->opcacheConfig, [
             '@output'       => $this->scriptRealPath(),
             '@generated_at' => date('Y-m-d H:i:s e'),
             '@autoload'     => isset($this->autoloader)
-                ? 'require_once \'' . realpath($this->autoloader) . '\';': null,
+                ? 'require_once \'' . realpath($this->autoloader) . '\';' : null,
             '@list'         => $this->parseList(),
-            '@failure'      => $this->ignoreNotFound ? 'continue;' : 'throw new \Exception("{$file} does not exist or is unreadable.");',
+            '@failure'      => $this->ignoreNotFound ?
+                'continue;' :
+                'throw new \Exception("{$file} does not exist or is unreadable.");',
             '@mechanism'    => $this->useRequire
                 ? 'require_once $file' : 'opcache_compile_file($file)',
         ]);

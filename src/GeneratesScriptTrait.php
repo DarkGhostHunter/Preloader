@@ -9,14 +9,14 @@ trait GeneratesScriptTrait
     protected ?string $autoloader = null;
     protected bool $ignoreNotFound = false;
 
-    public function memoryLimit(float|int $limit) : self
+    public function memoryLimit(float|int $limit): self
     {
         $this->memory = (float)$limit;
 
         return $this;
     }
 
-    public function useRequire(string $autoloader) : self
+    public function useRequire(string $autoloader): self
     {
         $this->useRequire = true;
         $this->autoloader = $autoloader;
