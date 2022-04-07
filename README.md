@@ -4,7 +4,7 @@ Braden Collum - Unsplash (UL) #9HI8UJMSdZA](https://images.unsplash.com/photo-14
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/darkghosthunter/preloader.svg?style=flat-square)](https://packagist.org/packages/darkghosthunter/preloader) [![License](https://poser.pugx.org/darkghosthunter/preloader/license)](https://packagist.org/packages/darkghosthunter/preloader)
 ![](https://img.shields.io/packagist/php-v/darkghosthunter/preloader.svg)
  ![](https://github.com/diego-ninja/Preloader/workflows/PHP%20Composer/badge.svg)
-[![Coverage Status](https://coveralls.io/repos/github/DarkGhostHunter/Preloader/badge.svg?branch=master)](https://coveralls.io/github/DarkGhostHunter/Preloader?branch=master)
+[![Coverage Status](https://coveralls.io/repos/github/diego-ninja/Preloader/badge.svg?branch=master)](https://coveralls.io/github/diego-ninja/Preloader?branch=master)
 
 # Opcache Preloader
 
