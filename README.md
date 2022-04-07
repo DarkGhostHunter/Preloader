@@ -3,14 +3,17 @@ Braden Collum - Unsplash (UL) #9HI8UJMSdZA](https://images.unsplash.com/photo-14
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/darkghosthunter/preloader.svg?style=flat-square)](https://packagist.org/packages/darkghosthunter/preloader) [![License](https://poser.pugx.org/darkghosthunter/preloader/license)](https://packagist.org/packages/darkghosthunter/preloader)
 ![](https://img.shields.io/packagist/php-v/darkghosthunter/preloader.svg)
- ![](https://github.com/DarkGhostHunter/Preloader/workflows/PHP%20Composer/badge.svg)
+ ![](https://github.com/diego-ninja/Preloader/workflows/PHP%20Composer/badge.svg)
 [![Coverage Status](https://coveralls.io/repos/github/DarkGhostHunter/Preloader/badge.svg?branch=master)](https://coveralls.io/github/DarkGhostHunter/Preloader?branch=master)
 
 # Opcache Preloader
 
 Get the best options to keep your application fast as ever, with just one line.
 
-This package generates a [PHP preloading](https://www.php.net/manual/en/opcache.configuration.php#ini.opcache.preload) script from your Opcache statistics automatically. No need to hack your way in.
+This package generates a [PHP preloading](https://www.php.net/manual/en/opcache.configuration.php#ini.opcache.preload) script from your Opcache statistics automatically. No need to hack your way in. This package is a fork of
+[darkghosthunter/preloader](https://github.com/DarkGhostHunter/Preloader) with the only target of update code and dependencies to fit with php 8.x and Symfony 6 components. It doesn't add, at least at the moment, new functionality.
+
+If you need php 7.4 support please, use the aforementioned package.
 
 > If you're looking for preloading your Laravel project, check [Laragear PReload](https://github.com/Laragear/Preload).
 
@@ -42,7 +45,7 @@ This package generates a [PHP preloading](https://www.php.net/manual/en/opcache.
 
 ## Requirements
 
-* PHP 7.4.3, PHP 8.0 or later.
+* PHP 8.0 or later.
 * [Opcache & Preloading enabled](https://www.php.net/manual/en/book.opcache.php) (`ext-opcache`).
 * Composer Autoloader (optional).
 
@@ -50,7 +53,7 @@ This package generates a [PHP preloading](https://www.php.net/manual/en/opcache.
 
 Require this using Composer into your project
 
-    composer require darkghosthunter/preloader
+    composer require diego-ninja/preloader
 
 > This package doesn't require `ext-opcache` to install. Just be sure to have it [enabled in your application server](https://www.php.net/manual/en/book.opcache.php).
 
@@ -61,7 +64,7 @@ Anywhere in your application, where Opcache is **enabled** and running, call `Pr
 ```php
 <?php
 
-use DarkGhostHunter\Preloader\Preloader;
+use Ninja\Preloader\Preloader;
 
 Preloader::make()->writeTo(__DIR__.'/preloader.php');
 ```
@@ -106,7 +109,7 @@ This method executes the given callable and checks if the preloader should compi
 ```php
 <?php
 
-use DarkGhostHunter\Preloader\Preloader;
+use Ninja\Preloader\Preloader;
 
 Preloader::make()->when(fn () => $app->cache()->get('should_run'));
 ```
@@ -120,7 +123,7 @@ This is method is just a helper to allows you to quickly generate a Preloader sc
 ```php
 <?php
 
-use DarkGhostHunter\Preloader\Preloader;
+use Ninja\Preloader\Preloader;
 
 Preloader::make()->whenOneIn(50);
 ```
@@ -131,12 +134,12 @@ For example, the above makes the Preloader generate a compiled list one in fifty
 
 #### `append()`
 
-You can add a list of directories to the compiled list. The files inside them will be appended to the compiled list, and won't account for memory restrictions. 
+You can add a list of directories to the compiled list. The files inside them will be appended to the compiled list, and won't account for memory restrictions.
 
 ```php
 <?php
 
-use DarkGhostHunter\Preloader\Preloader;
+use Ninja\Preloader\Preloader;
 
 Preloader::make()->append([
     __DIR__ . '/files/*/more_files', 
@@ -152,7 +155,7 @@ This packages includes [Symfony Finder](https://symfony.com/doc/current/componen
 <?php
 
 use Symfony\Component\Finder\Finder;
-use DarkGhostHunter\Preloader\Preloader;
+use Ninja\Preloader\Preloader;
 
 Preloader::make()->append(function (Finder $find) {
     $find->files()->in('/package')->name(['*.php', '*.twig']);
@@ -166,11 +169,11 @@ Preloader::make()->append(function (Finder $find) {
 This method excludes files from inside directories from Opcache list, which later end up in the Preload list. Excluding files may free up the memory of the compiled list, leaving space for others to be included.
 
 You can pass an array of paths, which is good if you already have a list ready to exclude.
- 
+
 ```php
 <?php
 
-use DarkGhostHunter\Preloader\Preloader;
+use Ninja\Preloader\Preloader;
 
 Preloader::make()->exclude([
     __DIR__ . '/files/*/more_files',
@@ -184,7 +187,7 @@ This packages includes [Symfony Finder](https://symfony.com/doc/current/componen
 <?php
 
 use Symfony\Component\Finder\Finder;
-use DarkGhostHunter\Preloader\Preloader;
+use Ninja\Preloader\Preloader;
 
 Preloader::make()->exclude(function (Finder $find) {
     $find->files()->in('/package')->name(['*.php', '*.twig']);
@@ -202,7 +205,7 @@ By default, the package is not excluded, since it may be part of the most reques
 ```php
 <?php
 
-use DarkGhostHunter\Preloader\Preloader;
+use Ninja\Preloader\Preloader;
 
 Preloader::make()->selfExclude();
 ```
@@ -213,12 +216,12 @@ Preloader::make()->selfExclude();
 
 By default, Preloader defaults a memory limit of 32MB, which is enough for *most* applications. The Preloader will generate a list of files until that memory limit is reached.
 
-You can set your own memory limit in **MB**. 
+You can set your own memory limit in **MB**.
 
 ```php
 <?php
 
-use DarkGhostHunter\Preloader\Preloader;
+use Ninja\Preloader\Preloader;
 
 Preloader::make()->memoryLimit(32);
 ```
@@ -238,7 +241,7 @@ You can change this using `useRequire()`, which changes to  `require_once`, alon
 ```php
 <?php
 
-use DarkGhostHunter\Preloader\Preloader;
+use Ninja\Preloader\Preloader;
 
 Preloader::make()->useRequire(__DIR__ . '/../vendor/autoload.php');
 ```
@@ -254,7 +257,7 @@ To avoid this problem, you can use the `ignoreNotFound()`, which will compile a 
 ```php
 <?php
 
-use DarkGhostHunter\Preloader\Preloader;
+use Ninja\Preloader\Preloader;
 
 Preloader::make()->ignoreNotFound();
 ```
@@ -270,7 +273,7 @@ This will automatically create a PHP-ready script to preload your application. I
 ```php
 <?php
 
-use DarkGhostHunter\Preloader\Preloader;
+use Ninja\Preloader\Preloader;
 
 Preloader::make()->writeTo(__DIR__ . '/preloader.php');
 ```
@@ -284,7 +287,7 @@ You can retrieve the raw list of files that should be included as an array using
 ```php
 <?php
 
-use DarkGhostHunter\Preloader\Preloader;
+use Ninja\Preloader\Preloader;
 
 Preloader::make()->getList();
 ```
@@ -332,7 +335,7 @@ Okay. Let's say we have a codebase with thousand of files. We don't know any met
 // index.php
 
 use Framework\App;
-use DarkGhostHunter\Preloader\Preloader;
+use Ninja\Preloader\Preloader;
 
 require __DIR__ . '/../vendor/autoload.php';
 

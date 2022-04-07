@@ -1,88 +1,34 @@
 <?php
 
-namespace DarkGhostHunter\Preloader;
+namespace Ninja\Preloader;
 
 use LogicException;
 use RuntimeException;
 
 class Preloader
 {
-    use ConditionsScript;
-    use ManagesFiles;
-    use GeneratesScript;
+    use ConditionsScriptTrait;
+    use ManagesFilesTrait;
+    use GeneratesScriptTrait;
 
-    /**
-     * Default memory limit for the preload list.
-     *
-     * @var float
-     */
     public const MEMORY_LIMIT = 32.0;
-
-    /**
-     * Stub for the preload file script.
-     *
-     * @var string
-     */
     protected const STUB_LOCATION = __DIR__ . '/preload.php.stub';
 
-    /**
-     * Determines if the preload file should be rewritten.
-     *
-     * @var bool
-     */
     protected bool $overwrite = true;
 
-    /**
-     * The class in charge to write the preloader.
-     *
-     * @var \DarkGhostHunter\Preloader\PreloaderCompiler
-     */
-    protected PreloaderCompiler $compiler;
-
-    /**
-     * Script List builder.
-     *
-     * @var \DarkGhostHunter\Preloader\PreloaderLister
-     */
-    protected PreloaderLister $lister;
-
-    /**
-     * Opcache class access.
-     *
-     * @var \DarkGhostHunter\Preloader\Opcache
-     */
-    protected Opcache $opcache;
-
-    /**
-     * Preloader constructor.
-     *
-     * @param  \DarkGhostHunter\Preloader\PreloaderCompiler  $compiler
-     * @param  \DarkGhostHunter\Preloader\PreloaderLister  $lister
-     * @param  \DarkGhostHunter\Preloader\Opcache  $opcache
-     */
-    public function __construct(PreloaderCompiler $compiler, PreloaderLister $lister, Opcache $opcache)
-    {
-        $this->compiler = $compiler;
-        $this->lister = $lister;
-        $this->opcache = $opcache;
+    public function __construct(
+        protected PreloaderCompiler $compiler,
+        protected PreloaderLister $lister,
+        protected Opcache $opcache
+    ) {
     }
 
-    /**
-     * Returns the raw list of files to include in the script
-     *
-     * @return array
-     */
     public function getList() : array
     {
         return $this->prepareLister()->build();
     }
 
-    /**
-     * Prepares the Preload Lister.
-     *
-     * @return \DarkGhostHunter\Preloader\PreloaderLister
-     */
-    protected function prepareLister()
+    protected function prepareLister(): PreloaderLister
     {
         $this->lister->list = $this->opcache->getScripts();
         $this->lister->memory = $this->memory;
@@ -93,25 +39,11 @@ class Preloader
         return $this->lister;
     }
 
-    /**
-     * Writes the Preload script to the given path.
-     *
-     * @param  string  $path
-     * @param  bool  $overwrite
-     * @return bool
-     */
     public function writeTo(string $path, bool $overwrite = true) : bool
     {
         return $this->canGenerate($path, $overwrite) && $this->performWrite($path);
     }
 
-    /**
-     * Return if this Preloader can NOT generate the script.
-     *
-     * @param  string  $path
-     * @param  bool  $overwrite
-     * @return bool
-     */
     protected function canGenerate(string $path, bool $overwrite) : bool
     {
         // When using require, check if the autoloader exists.
@@ -142,15 +74,7 @@ class Preloader
         return true;
     }
 
-    /**
-     * Writes the preloader script file into the specified path.
-     *
-     * @param  string  $path
-     * @return false|int
-     *
-     * @codeCoverageIgnore
-     */
-    protected function performWrite(string $path)
+    protected function performWrite(string $path): bool
     {
         if (file_put_contents($path, $this->prepareCompiler($path)->compile(), LOCK_EX)) {
             return true;
@@ -159,13 +83,7 @@ class Preloader
         throw new RuntimeException("Preloader couldn't write the script to [$path].");
     }
 
-    /**
-     * Prepares the Compiler to make a list.
-     *
-     * @param  string  $path
-     * @return \DarkGhostHunter\Preloader\PreloaderCompiler
-     */
-    protected function prepareCompiler(string $path)
+    protected function prepareCompiler(string $path): PreloaderCompiler
     {
         $this->compiler->list = $this->getList();
         $this->compiler->autoloader = $this->autoloader;
@@ -180,11 +98,6 @@ class Preloader
         return $this->compiler;
     }
 
-    /**
-     * Creates a new Preloader instance
-     *
-     * @return static
-     */
     public static function make() : self
     {
         return new static(new PreloaderCompiler, new PreloaderLister, new Opcache);
