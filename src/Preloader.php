@@ -135,7 +135,7 @@ class Preloader
         }
 
         // If there is a condition, call it.
-        if ($this->condition) {
+        if (is_callable($this->condition)) {
             return (bool) call_user_func($this->condition);
         }
 
@@ -146,17 +146,17 @@ class Preloader
      * Writes the preloader script file into the specified path.
      *
      * @param  string  $path
-     * @return false|int
+     * @return true
      *
      * @codeCoverageIgnore
      */
     protected function performWrite(string $path)
     {
-        if (file_put_contents($path, $this->prepareCompiler($path)->compile(), LOCK_EX)) {
-            return true;
+        if (file_put_contents($path, $this->prepareCompiler($path)->compile(), LOCK_EX) === false) {
+            throw new RuntimeException("Preloader couldn't write the script to [$path].");
         }
 
-        throw new RuntimeException("Preloader couldn't write the script to [$path].");
+        return true;
     }
 
     /**

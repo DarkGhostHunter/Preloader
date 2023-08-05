@@ -11,7 +11,7 @@ class PreloaderCompiler
      *
      * @var false|string
      */
-    public string $contents;
+    public $contents;
 
     /**
      * Configuration array.
@@ -67,7 +67,7 @@ class PreloaderCompiler
      *
      * @return string|string[]
      */
-    public function compile() : string
+    public function compile()
     {
         $replacing = array_merge($this->preloaderConfig, $this->opcacheConfig, [
             '@output'       => $this->scriptRealPath(),
@@ -80,7 +80,7 @@ class PreloaderCompiler
                 ? 'require_once $file' : 'opcache_compile_file($file)',
         ]);
 
-        return str_replace(array_keys($replacing), $replacing, $this->contents);
+        return str_replace(array_keys($replacing), $replacing, $this->contents ?: []);
     }
 
     /**

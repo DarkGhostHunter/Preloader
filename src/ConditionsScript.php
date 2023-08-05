@@ -7,7 +7,7 @@ trait ConditionsScript
     /**
      * If this Preloader should run
      *
-     * @var callable
+     * @var callable|null
      */
     protected $condition;
 
