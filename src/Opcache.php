@@ -27,7 +27,7 @@ class Opcache
      */
     public function getStatus() : array
     {
-        if ($this->status ??= opcache_get_status(true)) {
+        if ($this->status = $this->status ?: opcache_get_status(true)) {
             return $this->status;
         }
 
