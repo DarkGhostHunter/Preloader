@@ -1,9 +1,9 @@
-![
-Braden Collum - Unsplash (UL) #9HI8UJMSdZA](https://images.unsplash.com/photo-1461896836934-ffe607ba8211?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=1280&h=400&q=80)
+![Braden Collum - Unsplash (UL) #9HI8UJMSdZA](https://images.unsplash.com/photo-1461896836934-ffe607ba8211?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=1280&h=400&q=80)
 
-[![Latest Version on Packagist](https://img.shields.io/packagist/v/darkghosthunter/preloader.svg?style=flat-square)](https://packagist.org/packages/darkghosthunter/preloader) [![License](https://poser.pugx.org/darkghosthunter/preloader/license)](https://packagist.org/packages/darkghosthunter/preloader)
-![](https://img.shields.io/packagist/php-v/darkghosthunter/preloader.svg)
- ![](https://github.com/DarkGhostHunter/Preloader/workflows/PHP%20Composer/badge.svg)
+[![Latest Version on Packagist](https://img.shields.io/packagist/v/darkghosthunter/preloader.svg?style=flat-square)](https://packagist.org/packages/darkghosthunter/preloader)
+[![License](https://poser.pugx.org/darkghosthunter/preloader/license)](LICENSE)
+[![PHP versions](https://img.shields.io/packagist/php-v/darkghosthunter/preloader.svg)](composer.json)
+[![CI](https://github.com/DarkGhostHunter/Preloader/workflows/PHP%20Composer/badge.svg)](https://github.com/DarkGhostHunter/Preloader/actions/workflows/php.yml)
 [![Coverage Status](https://coveralls.io/repos/github/DarkGhostHunter/Preloader/badge.svg?branch=master)](https://coveralls.io/github/DarkGhostHunter/Preloader?branch=master)
 
 # Opcache Preloader
@@ -50,7 +50,9 @@ This package generates a [PHP preloading](https://www.php.net/manual/en/opcache.
 
 Require this using Composer into your project
 
-    composer require darkghosthunter/preloader
+```bash
+composer require darkghosthunter/preloader
+```
 
 > This package doesn't require `ext-opcache` to install. Just be sure to have it [enabled in your application server](https://www.php.net/manual/en/book.opcache.php).
 
@@ -68,10 +70,12 @@ Preloader::make()->writeTo(__DIR__.'/preloader.php');
 
 This will automatically gather Opcache statistics, and write an optimized `preload.php` file. In this case, the file will be created in the same directory the Preloader was called.
 
-    www
-    └── app
-        ├── PreloaderCall.php
-        └── preload.php
+```
+www
+└── app
+    ├── PreloaderCall.php
+    └── preload.php
+```
 
 Once generated, tell PHP to use this file as a preloader at start up in your `php.ini`.
 
