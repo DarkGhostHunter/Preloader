@@ -6,11 +6,16 @@ use RuntimeException;
 
 class Opcache
 {
-    protected array $status;
+    protected array|false $status;
+
+    public function __construct()
+    {
+        $this->status = opcache_get_status();
+    }
 
     public function getStatus(): array
     {
-        if ($this->status ??= opcache_get_status(true)) {
+        if ($this->status !== false) {
             return $this->status;
         }
 

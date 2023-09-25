@@ -8,7 +8,7 @@
  * @see https://php.net/manual/en/function.register-shutdown-function.php
  */
 
-register_shutdown_function(function (): void {
+register_shutdown_function(static function (): void {
     $error = error_get_last();
     if (!$error) {
         return;
