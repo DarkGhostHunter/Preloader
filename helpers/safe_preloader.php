@@ -1,4 +1,5 @@
 <?php
+
 /**
  * This file is a pre-preloader script that includes a shutdown function that enables
  * error logging when something happens while preloading the file list into Opcache.
@@ -18,4 +19,5 @@ register_shutdown_function(static function (): void {
     echo 'File: ' . $error['file'] . \PHP_EOL;
 });
 
-require_once /* Path to your preload script */
+// Uncomment the line below to enable the preloader.
+// require_once("/app/vendor/preload.php");
